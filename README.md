@@ -1,2 +1,2 @@
 # create_testcase_ai
-project tạp tự động test case
+project tạo tự động test case
