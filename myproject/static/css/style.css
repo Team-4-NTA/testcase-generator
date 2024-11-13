@@ -1,0 +1,90 @@
+body, html {
+    height: 100%;
+    font-family: Arial, sans-serif;
+    margin: 0;
+}
+
+.sidebar {
+    background-color: #333;
+    color: white;
+    width: 250px;
+    height: 100%;
+    transition: width 0.3s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1050;
+}
+
+.sidebar.collapsed {
+    width: 0px;
+}
+
+.sidebar a {
+    color: white;
+    padding: 10px;
+    text-decoration: none;
+    display: block;
+    transition: padding 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #444;
+}
+
+.sidebar .toggle-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    position: absolute;
+    top: 10px; 
+    left: 20px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-top: 50px; 
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    padding: 5px 0;
+}
+
+.sidebar.collapsed .nav-link {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.sidebar.collapsed h2, .sidebar.collapsed ul {
+    display: none;
+}
+
+.output-form {
+    background-color: #f1f1f1;
+    overflow-y: auto;
+    padding: 10px;
+    flex-grow: 1;
+}
+
+.input-form {
+    gap: 10px;
+}
+
+.input-form .form-control {
+    height: 70px;
+}
+
+.input-form button {
+    height: 50px;
+}
+
+.input-form textarea {
+    min-height: 100px;
+}
