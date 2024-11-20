@@ -4,5 +4,5 @@ from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
-    path('', views.chatbot, name='chatbot'),
+    path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
 ]
