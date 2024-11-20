@@ -8,38 +8,39 @@
             </button>
             <h2>Nhật Ký</h2>
             <ul id="sidebar-list" class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Nhật ký 1</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Nhật ký 2</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Nhật ký 3</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Nhật Ký 1</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Nhật Ký 2</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Nhật Ký 3</a></li>
             </ul>
         </nav>
-
         <main class="col h-100 d-flex flex-column" style="padding: 0; margin-left: 250px;">
             <div class="bg-dark text-white p-2 d-flex justify-content-end align-items-center">
                 <button class="btn btn-secondary mr-2" onclick="addNewItem()">
                     <i class="fas fa-plus"></i> Tạo mới
                 </button>
-
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-cog"></i> Cài đặt
                     </button>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Cài đặt 1</a>
+                        <a class="dropdown-item" href="#"> Cài đặt 1</a>
                         <a class="dropdown-item" href="#">Cài đặt có nội dung dài hơn để kiểm tra</a>
                         <a class="dropdown-item" href="#">Cài đặt 3</a>
                     </div>
                 </div>
             </div>
-
             <div class="flex-grow-1 d-flex flex-column p-3">
-                <div id="output" class="output-form mb-3">
-                    <p>Output sẽ được hiển thị tại đây...</p>
+                <div id="response" class="output-form mb-3">
+                    <div id="loading" class="typing-indicator d-none">
+                        <i style="margin-right:5px;color:gray">Vui lòng đợi trong vài giây lát</i>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>      
                 </div>
-
                 <div class="input-form d-flex align-items-stretch">
-                    <textarea id="textField" class="form-control flex-fill w-50 mr-2" placeholder="Nhập màn hình chức năng (vd: login,..)"></textarea>
-                    <textarea id="textInput" class="form-control flex-fill mr-2" placeholder="Nhập yêu cầu màn hình"></textarea>
+                    <textarea id="screen_name" class="form-control flex-fill w-50 mr-2" placeholder="Nhập màn hình chức năng (ví dụ: login,..)"></textarea>
+                    <textarea id="requirement" class="form-control flex-fill mr-2" placeholder="Nhập yêu cầu màn hình"></textarea>
                     <button class="btn btn-primary" style="height: 40px;" onclick="submitForm()">Gửi</button>
                 </div>
             </div>
@@ -48,11 +49,10 @@
 </div>
 
 <script>
-    // Toggle sidebar visibility
+    // Function to toggle sidebar visibility
     document.getElementById('toggleSidebar').addEventListener('click', function() {
         var sidebar = document.getElementById('sidebar');
         sidebar.classList.toggle('collapsed');
-        
         var mainContent = document.querySelector('main');
         if (sidebar.classList.contains('collapsed')) {
             mainContent.style.marginLeft = '0px';
@@ -62,6 +62,7 @@
     });
 
     let itemCount = 4;
+
     function addNewItem() {
         const sidebarList = document.getElementById("sidebar-list");
         const newItem = document.createElement("li");
@@ -71,21 +72,48 @@
         itemCount++;
     }
 
-    function submitForm() {
-        const textField = document.getElementById("textField").value;
-        const textInput = document.getElementById("textInput").value;
-        const output = document.getElementById("output");
-
-        if (textField && textInput) {
-            const newEntry = document.createElement("p");
-            newEntry.textContent = `Văn bản: ${textField}, Nội dung: ${textInput}`;
-            output.appendChild(newEntry);
-
-            document.getElementById("textField").value = '';
-            document.getElementById("textInput").value = '';
-        } else {
+    async function submitForm() {
+        const screen_name = document.getElementById("screen_name").value;
+        const requirement = document.getElementById("requirement").value;
+        const output = document.getElementById("response");
+        const loading = document.getElementById("loading");
+    
+        if (!screen_name || !requirement) {
             alert("Vui lòng nhập đầy đủ thông tin!");
+            return;
+        }
+        loading.classList.remove("d-none");
+    
+        try {
+            output.innerText = ""; // Clear previous output
+            const response = await fetch("", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
+            });
+    
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let done = false;
+            let result = '';
+    
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+                result += decoder.decode(value, { stream: true });
+                output.innerText = result;  // Cập nhật kết quả dần dần
+            }
+    
+        } catch (error) {
+            console.error("Lỗi:", error);
+            alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
+        } finally {
+            loading.classList.add("d-none");
         }
     }
+    
 </script>
 {% endblock %}
