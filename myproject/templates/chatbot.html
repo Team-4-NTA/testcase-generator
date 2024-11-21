@@ -1,67 +1,129 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container-fluid h-100">
-    <div class="row h-100">
-        <nav id="sidebar" class="sidebar py-3">
-            <button class="toggle-btn" id="toggleSidebar">
-                <i class="fas fa-bars"></i>
+<div class="h-100 container">
+    <nav id="sidebar" class="sidebar">
+        <button class="toggle-btn" id="toggleSidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h2>Nhật Ký</h2>
+        <ul id="sidebar-list" class="nav flex-column">
+            <!-- List items -->
+        </ul>
+    </nav>
+    <main class="content">
+        <div class="top-bar bg-dark text-white p-2 d-flex justify-content-end align-items-center">
+            <button class="btn btn-secondary mr-2" onclick="addNewItem()">
+                <i class="fas fa-plus"></i> Tạo mới
             </button>
-            <h2>Nhật Ký</h2>
-            <ul id="sidebar-list" class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Nhật Ký 1</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Nhật Ký 2</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Nhật Ký 3</a></li>
-            </ul>
-        </nav>
-        <main class="col h-100 d-flex flex-column" style="padding: 0; margin-left: 250px;">
-            <div class="bg-dark text-white p-2 d-flex justify-content-end align-items-center">
-                <button class="btn btn-secondary mr-2" onclick="addNewItem()">
-                    <i class="fas fa-plus"></i> Tạo mới
+            <button class="btn btn-secondary mr-2" id="saveButton">
+                <i class="fas fa-save"></i> Lưu
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-cog"></i> Cài đặt
                 </button>
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-cog"></i> Cài đặt
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#"> Cài đặt 1</a>
-                        <a class="dropdown-item" href="#">Cài đặt có nội dung dài hơn để kiểm tra</a>
-                        <a class="dropdown-item" href="#">Cài đặt 3</a>
-                    </div>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" href="#">Cài đặt 1</a>
+                    <a class="dropdown-item" href="#">Cài đặt 2</a>
+                    <a class="dropdown-item" href="#">Cài đặt 3</a>
                 </div>
             </div>
-            <div class="flex-grow-1 d-flex flex-column p-3">
-                <div id="response" class="output-form mb-3">
-                    <div id="loading" class="typing-indicator d-none">
-                        <i style="margin-right:5px;color:gray">Vui lòng đợi trong vài giây lát</i>
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>      
-                </div>
-                <div class="input-form d-flex align-items-stretch">
-                    <textarea id="screen_name" class="form-control flex-fill w-50 mr-2" placeholder="Nhập màn hình chức năng (ví dụ: login,..)"></textarea>
-                    <textarea id="requirement" class="form-control flex-fill mr-2" placeholder="Nhập yêu cầu màn hình"></textarea>
-                    <button class="btn btn-primary" style="height: 40px;" onclick="submitForm()">Gửi</button>
-                </div>
+        </div>
+        <div class="flex-grow-1 d-flex flex-column p-3" style="height: calc(100vh - 54px);">
+            <div id="responses" class="msger-chat" style="height: auto; overflow-y: auto; overflow-x: hidden;">
+                <!-- Các câu hỏi và câu trả lời sẽ được thêm vào đây -->
             </div>
-        </main>
-    </div>
+            <div id="loading" class="typing-indicator d-none">
+                <i style="margin-right:5px;color:gray">Vui lòng đợi trong vài giây...</i>
+                <span></span><span></span><span></span>
+            </div>
+        
+            <div class="input-form d-flex align-items-stretch mt-3">
+                <textarea id="screen_name" class="form-control flex-fill w-50 mr-2" placeholder="Nhập màn hình chức năng (ví dụ: login,..)"></textarea>
+                <textarea id="requirement" class="form-control flex-fill mr-2" placeholder="Nhập yêu cầu màn hình"></textarea>
+                <button class="btn btn-primary" onclick="submitForm()">Gửi</button>
+            </div>
+        </div>        
+    </main>
 </div>
-
 <script>
-    // Function to toggle sidebar visibility
+    const responsesContainer = document.getElementById("responses");
+    let lastRightId = null;
+
     document.getElementById('toggleSidebar').addEventListener('click', function() {
         var sidebar = document.getElementById('sidebar');
         sidebar.classList.toggle('collapsed');
         var mainContent = document.querySelector('main');
         if (sidebar.classList.contains('collapsed')) {
-            mainContent.style.marginLeft = '0px';
+            mainContent.style.width = '100%';
         } else {
-            mainContent.style.marginLeft = '250px';
+            if (window.innerWidth > 1200) { 
+                mainContent.style.width = '80%';
+            } else {
+                mainContent.style.width = '70%';
+            } 
         }
     });
 
-    let itemCount = 4;
+    document.getElementById("saveButton").addEventListener("click", async function() {
+        const loading = document.getElementById("loading");
+
+        const responsesContainer = document.getElementById("responses");
+        const messageContainers = responsesContainer.querySelectorAll(".msg-container"); // Get all paired messages
+        const chatItems = [];
+
+        messageContainers.forEach(container => {
+            const userMsg = container.querySelector(".right-msg .msg-text");
+            const botMsg = container.querySelector(".left-msg .msg-text");
+            console.log(userMsg.innerText);
+            console.log(botMsg.innerText);
+
+            if (userMsg && botMsg) {
+                try {
+                    const messageParts = userMsg.innerHTML.replace(/<br>/g, '\n').split('\n');
+                    chatItems.push({
+                        screen_name: messageParts[0].replace('Màn hình chức năng: ', '').trim(),
+                        requirement: messageParts[1].replace('Yêu cầu: ', '').trim(),
+                        result: botMsg.innerText.trim()
+                    });
+                } catch (error) {
+                    console.error("Error processing message container:", error, container);
+                }
+            } else {
+                console.warn("Missing user or bot message in container:", container);
+            }
+        });
+
+        if (chatItems.length === 0) {
+            alert("Không có lịch sử nào để lưu!");
+            return;
+        }
+
+        loading.classList.remove("d-none");
+
+        try {
+            const saveResponse = await fetch("/save-history/", {  
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ chats: chatItems })
+            });
+
+            if (saveResponse.ok) {
+                alert("Lưu lịch sử thành công!");
+                fetchHistoryList();
+            } else {
+                alert("Lưu thất bại. Hãy thử lại.");
+            }
+        } catch (error) {
+            console.error("Lỗi khi lưu:", error);
+            alert("Có lỗi xảy ra trong quá trình lưu dữ liệu.");
+        } finally {
+            loading.classList.add("d-none");
+        }
+    });
 
     function addNewItem() {
         const sidebarList = document.getElementById("sidebar-list");
@@ -69,23 +131,25 @@
         newItem.className = "nav-item";
         newItem.innerHTML = `<a class="nav-link" href="#">Nhật ký ${itemCount}</a>`;
         sidebarList.appendChild(newItem);
-        itemCount++;
     }
 
     async function submitForm() {
         const screen_name = document.getElementById("screen_name").value;
         const requirement = document.getElementById("requirement").value;
-        const output = document.getElementById("response");
         const loading = document.getElementById("loading");
-    
+
         if (!screen_name || !requirement) {
             alert("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
+
         loading.classList.remove("d-none");
-    
+
+        const text = `Màn hình chức năng: ${screen_name}<br>Yêu cầu: ${requirement}`;
+
+        appendMessage("user", "right", text,  Date.now());
+
         try {
-            output.innerText = ""; // Clear previous output
             const response = await fetch("", {
                 method: "POST",
                 headers: {
@@ -94,26 +158,165 @@
                 },
                 body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
             });
-    
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let done = false;
             let result = '';
-    
+
             while (!done) {
                 const { value, done: readerDone } = await reader.read();
                 done = readerDone;
                 result += decoder.decode(value, { stream: true });
-                output.innerText = result;  // Cập nhật kết quả dần dần
             }
-    
+            appendMessage("bot", "left", result, Date.now());
         } catch (error) {
             console.error("Lỗi:", error);
             alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
         } finally {
+            loading.classList.add("d-none"); 
+        }
+    }
+
+    async function fetchHistoryList() {
+        const sidebarList = document.getElementById("sidebar-list");
+        sidebarList.innerHTML = "";
+
+        try {
+            const response = await fetch("/get-history/");
+            const histories = await response.json();
+            console.log(histories);
+            console.log(histories.length);
+
+            histories.forEach(history => {
+                const listItem = document.createElement("li");
+                listItem.className = "nav-item";
+                listItem.innerHTML = `<a class="nav-link" href="#" onclick="loadChats(${history.id})">${history.name}</a>`;
+                sidebarList.appendChild(listItem);
+            });
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách nhật ký:", error);
+        }
+    }
+
+    async function loadChats(id) {
+        const loading = document.getElementById("loading"); 
+        try {
+            loading.classList.remove("d-none"); 
+
+            const response = await fetch(`/get-chat-list/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            });
+
+            if (response.ok) {
+                const chats = await response.json();
+                displayChats(chats);
+            } else {
+                alert("Không thể tải lịch sử trò chuyện.");
+            }
+        } catch (error) {
+            console.error("Error fetching chat history:", error);
+            alert("Có lỗi xảy ra khi tải lịch sử.");
+        } finally {
             loading.classList.add("d-none");
         }
     }
-    
+
+    function displayChats(chats) {
+        const responsesContainer = document.getElementById("responses"); 
+
+        responsesContainer.innerHTML = '';
+
+        chats.forEach(chat => {
+            const msgHTML = `
+                <div id="msg-container-${chat.id}" class="msg-container">
+                    <div class="msg right-msg">
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">user</div>
+                                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
+                            </div>
+                            <div class="msg-text" id="${chat.id}">
+                                Màn hình chức năng: ${chat.screen_name}<br>Yêu cầu: ${chat.requirement}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="msg left-msg">
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">bot</div>
+                                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
+                            </div>
+                            <div class="msg-text" id="${chat.id}-bot"></div>
+                        </div>
+                    </div>
+                </div> 
+            `;
+            responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+            const msgTextDiv = document.getElementById(`${chat.id}-bot`);
+            msgTextDiv.textContent = chat.result;
+            responsesContainer.scrollTop = responsesContainer.scrollHeight;
+        });
+    }
+
+    function appendMessage(name, side, text, id) {
+        if (side === "right") {
+            lastRightId = `msg-container-${id}`;
+            msgHTML = `
+                <div id="msg-container-${id}" class="msg-container">
+                    <div class="msg ${side}-msg">
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">${name}</div>
+                                <div class="msg-info-time">${formatDate(new Date())}</div>
+                            </div>
+                            <div class="msg-text" id="${id}">${text}</div>
+                        </div>
+                    </div>
+                </div> 
+            `;
+            responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+        } else {
+            const container = document.getElementById(lastRightId);
+            if (container) {
+                msgHTML = `
+                    <div class="msg ${side}-msg">
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">${name}</div>
+                                <div class="msg-info-time">${formatDate(new Date())}</div>
+                            </div>
+                            <div class="msg-text" id="${id}-bot"></div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML("beforeend", msgHTML);
+                const msgTextDiv = document.getElementById(`${id}-bot`);
+                msgTextDiv.textContent = text;
+            } else {
+                console.error(`Container with id "${lastRightId}" not found for bot message.`);
+            }
+        }
+        responsesContainer.scrollTop = responsesContainer.scrollHeight;
+    }
+
+    function formatDate(date) {
+        if (!(date instanceof Date)) {
+            date = new Date(date); // Convert string or number to Date
+        }
+
+        const h = "0" + date.getHours();
+        const m = "0" + date.getMinutes();
+
+        return `${h.slice(-2)}:${m.slice(-2)}`;
+    }
+
+    window.onload = function () {
+        fetchHistoryList();
+    };
 </script>
 {% endblock %}
