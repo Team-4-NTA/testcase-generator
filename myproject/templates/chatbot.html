@@ -164,12 +164,15 @@
             let done = false;
             let result = '';
 
+            let now = Date.now();
+            appendMessage("bot", "left", result, now);
             while (!done) {
                 const { value, done: readerDone } = await reader.read();
                 done = readerDone;
                 result += decoder.decode(value, { stream: true });
+                const msgTextDiv = document.getElementById(`${now}-bot`);
+                msgTextDiv.innerText = result;
             }
-            appendMessage("bot", "left", result, Date.now());
         } catch (error) {
             console.error("Lỗi:", error);
             alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
@@ -295,8 +298,6 @@
                     </div>
                 `;
                 container.insertAdjacentHTML("beforeend", msgHTML);
-                const msgTextDiv = document.getElementById(`${id}-bot`);
-                msgTextDiv.textContent = text;
             } else {
                 console.error(`Container with id "${lastRightId}" not found for bot message.`);
             }
