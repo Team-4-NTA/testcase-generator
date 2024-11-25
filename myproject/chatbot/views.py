@@ -3,7 +3,8 @@ from django.shortcuts import render
 from django.http import JsonResponse,StreamingHttpResponse
 import openai
 import json
-import pandas as pd
+from .models import Chat, History
+from datetime import datetime
 
 openai.api_key = ''
 
@@ -43,7 +44,7 @@ def chatgpt_login_testcase(request):
             messages=[ 
                 {"role": "user", "content": prompt}
             ],
-            stream=True  # Kích hoạt stream
+            stream=True 
         )
 
         def stream_response():
@@ -56,3 +57,47 @@ def chatgpt_login_testcase(request):
 
     return render(request, "chatbot.html")
 
+def get_chat_list(request, history_id):
+    try:
+        history = History.objects.get(id=history_id)
+        chats = history.chats.values("id", "screen_name", "requirement", "result", "created_at")
+        return JsonResponse(list(chats), safe=False)
+    except History.DoesNotExist:
+        return JsonResponse({"error": "History not found"}, status=404)
+
+def get_history(request):
+    histories = History.objects.all().values("id", "name", "created_at")
+    return JsonResponse(list(histories), safe=False)
+
+def save_history(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            chats_data = data.get('chats', [])
+
+            if not chats_data:
+                return JsonResponse({"error": "No chats provided."}, status=400)
+
+            chat_objects = []
+            for chat_data in chats_data:
+                screen_name = chat_data.get('screen_name')
+                requirement = chat_data.get('requirement')
+                result = chat_data.get('result')
+
+                chat = Chat.objects.create(
+                    screen_name=screen_name,
+                    requirement=requirement,
+                    result=result
+                )
+                chat_objects.append(chat)
+
+            history = History.objects.create(name="User's Chat History")
+            history.chats.set(chat_objects) 
+
+            return JsonResponse({"message": "History saved successfully!"}, status=200)
+
+        except Exception as e:
+            print("Error:", e)
+            return JsonResponse({"error": "There was an error saving the history."}, status=500)
+    else:
+        return JsonResponse({"error": "Invalid method."}, status=405)
