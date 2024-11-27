@@ -1,10 +1,14 @@
 # myproject/views.py
 from django.shortcuts import render
-from django.http import JsonResponse,StreamingHttpResponse
+from django.http import JsonResponse,StreamingHttpResponse, HttpResponse
 import openai
 import json
 from .models import Chat, History
 from datetime import datetime
+import openpyxl
+import os
+from openpyxl.styles import Alignment
+import json
 
 openai.api_key = ''
 
@@ -24,9 +28,10 @@ def chatgpt_login_testcase(request):
           "Dữ liệu kiểm tra: <dữ liệu để test>\n"
           "Điều kiện: <điều kiện để test>\n"
           "Các bước kiểm tra: <các bước để test>\n"
+          "Kết quả mong đợi: <kết quả mong đợt>\n"
           "Ghi chú: <ghi chú>\n\n"
           "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
-          "Test case 1\n"
+          "### Test case 1\n"
           "Số thứ tự: 1\n"
           "Độ ưu tiên: Cao\n"
           "Loại: Kiểm thử chức năng\n"
@@ -37,6 +42,7 @@ def chatgpt_login_testcase(request):
           "    1. Nhập 'user123' vào trường Tên người dùng.\n"
           "    2. Nhập 'password123' vào trường Mật khẩu.\n"
           "    3. Nhấn nút 'Đăng nhập'.\n"
+          "Kết quả mong đợi: đăng nhập thành công"
           "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
          )
         response = openai.ChatCompletion.create(
@@ -101,3 +107,84 @@ def save_history(request):
             return JsonResponse({"error": "There was an error saving the history."}, status=500)
     else:
         return JsonResponse({"error": "Invalid method."}, status=405)
+
+def write_test_case_to_excel(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            screen_name = data.get('screenName', '')
+            data_test_case = data.get('testCase', '')
+
+            current_dir = os.path.dirname(__file__)
+            template_file_path = os.path.join(current_dir, "files/format-testcase.xlsx")
+
+            if not os.path.exists(template_file_path):
+                return JsonResponse({"error": "Template file not found!"}, status=500)
+
+            workbook = openpyxl.load_workbook(template_file_path)
+            sheet = workbook.active
+
+            # Ghi "Tên màn hình" vào ô đầu tiên
+            sheet["A2"] = screen_name
+
+            test_cases = data_test_case.split("### Test case")[1:]
+            row = 9
+            for case in test_cases:
+                columns = []
+                lines = case.splitlines()
+                steps = []
+                for line in lines:
+                    if "Số thứ tự:" in line:
+                        columns.append(line.split(":")[1].strip())
+                    elif "Độ ưu tiên:" in line:
+                        columns.append(line.split(":")[1].strip())
+                    elif "Loại:" in line:
+                        columns.append(line.split(":")[1].strip())
+                    elif "Mục tiêu:" in line:
+                        columns.append(line.split(":")[1].strip())
+                    elif "Dữ liệu kiểm tra:" in line:
+                        data_test = line.split(":", 1)[1].strip()
+                        data_test = data_test.replace(",", ",\n") 
+                        columns.append(data_test)
+                    elif "Điều kiện:" in line:
+                        columns.append(line.split(":")[1].strip())
+                    elif "Các bước kiểm tra:" in line:
+                        steps = []
+                    elif line.strip().startswith(tuple(str(i) + "." for i in range(1, 10))):
+                        steps.append(line.strip())
+                    elif "Kết quả mong đợi:" in line:
+                        columns.append(line.split(":")[1].strip())
+                    elif "Ghi chú:" in line:
+                        columns.append(line.split(":")[1].strip())
+
+                columns.append("\n".join(steps))
+                if len(columns) == 9:
+                    sheet[f"A{row}"] = columns[0]
+                    sheet[f"B{row}"] = columns[1]
+                    sheet[f"C{row}"] = columns[2]
+                    sheet[f"D{row}"] = columns[3]
+                    sheet[f"E{row}"] = columns[4]
+                    sheet[f"F{row}"] = columns[5]
+                    sheet[f"G{row}"] = columns[8]
+                    sheet[f"H{row}"] = columns[6]
+                    sheet[f"I{row}"] = columns[7]
+                    row += 1
+
+            for row in sheet.iter_rows(min_row=9, max_row=row - 1):
+                for cell in row:
+                    cell.alignment = Alignment(wrap_text=True)
+
+            from io import BytesIO
+            excel_file = BytesIO()
+            workbook.save(excel_file)
+            excel_file.seek(0)
+
+            response = HttpResponse(excel_file, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename="{screen_name}_testcase.xlsx"'
+            return response
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=400)
+
