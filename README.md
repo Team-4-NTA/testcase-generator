@@ -7,6 +7,10 @@ project tạo tự động test case
    
 4. cd myproject/
    
-6. python manage.py runserver 8888
-   
+5. python manage.py runserver 8888
+
+6. pip install mysql-connector-python
+
+7. python manage.py makemigrations
+
 8. python manage.py migrate
