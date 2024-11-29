@@ -76,10 +76,6 @@ body, html {
     padding: 0;
 }
 
-.sidebar ul li {
-    padding: 5px 0;
-}
-
 .sidebar.collapsed .nav-link {
     text-align: center;
     padding: 10px 0;
@@ -270,8 +266,4 @@ body, html {
     box-sizing: border-box;   
     background-color: #f9f9f9;
     border-radius: 5px;      
-}
-
-.history-item {
-    padding: 8px; 
 }
