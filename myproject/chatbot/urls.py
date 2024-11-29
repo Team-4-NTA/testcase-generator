@@ -9,4 +9,5 @@ urlpatterns = [
     path('get-chat-list/<int:history_id>', views.get_chat_list, name='get_chat_list'),
     path('get-history/', views.get_history, name='get_history'),
     path('save-history/', views.save_history, name='save_history'),
+    path('delete-history/<int:history_id>/', views.delete_history, name='delete_history'),
 ]

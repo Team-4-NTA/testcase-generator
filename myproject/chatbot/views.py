@@ -8,7 +8,7 @@ from datetime import datetime
 import openpyxl
 import os
 from openpyxl.styles import Alignment
-import json
+from django.views.decorators.csrf import csrf_exempt
 
 openai.api_key = ''
 
@@ -75,10 +75,12 @@ def get_history(request):
     histories = History.objects.all().values("id", "name", "created_at")
     return JsonResponse(list(histories), safe=False)
 
+@csrf_exempt
 def save_history(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
+            history_id = data.get('history_id')
             chats_data = data.get('chats', [])
 
             if not chats_data:
@@ -87,6 +89,10 @@ def save_history(request):
             chat_objects = []
             for chat_data in chats_data:
                 screen_name = chat_data.get('screen_name')
+
+                if not screen_name or screen_name.strip() == "" or screen_name == "N/A":
+                    continue 
+
                 requirement = chat_data.get('requirement')
                 result = chat_data.get('result')
 
@@ -95,18 +101,43 @@ def save_history(request):
                     requirement=requirement,
                     result=result
                 )
+
                 chat_objects.append(chat)
 
-            history = History.objects.create(name="User's Chat History")
-            history.chats.set(chat_objects) 
+            if history_id:
+                try:
+                    history = History.objects.get(id=history_id)
+                    history.chats.add(*chat_objects)
+                except History.DoesNotExist:
+                    return JsonResponse({"error": "History not found."}, status=404)
+            else:
+                history = History.objects.create(name=chat_objects[0].screen_name)
+                history.chats.set(chat_objects)
 
-            return JsonResponse({"message": "History saved successfully!"}, status=200)
+            return JsonResponse({"success": True, "history_id": history.id})
 
         except Exception as e:
             print("Error:", e)
             return JsonResponse({"error": "There was an error saving the history."}, status=500)
     else:
         return JsonResponse({"error": "Invalid method."}, status=405)
+    
+@csrf_exempt
+def delete_history(request, history_id):
+    try:
+        history = History.objects.get(id=history_id)
+        chats = history.chats.all()
+
+        for chat in chats:
+            chat.delete()
+
+        # Xóa history
+        history.delete()
+
+        return JsonResponse({"message": "History and associated chats deleted successfully"}, status=200)
+
+    except History.DoesNotExist:
+        return JsonResponse({"error": "History not found"}, status=404)
 
 def write_test_case_to_excel(request):
     if request.method == "POST":
