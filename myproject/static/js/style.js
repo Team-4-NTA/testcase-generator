@@ -80,9 +80,6 @@ document.getElementById("saveButton").addEventListener("click", async function()
             const responseData = await saveResponse.json();
             alert(`Lưu lịch sử thành công! ID: ${responseData.history_id}`);
             historyId = responseData.history_id;
-            element = document.getElementById(`history-${id}`);
-            element.style.backgroundColor = 'gray';
-            element.style.color = 'white';
             fetchHistoryList();
         } else {
             alert("Lưu thất bại. Hãy thử lại.");
@@ -99,11 +96,7 @@ function addNewItem() {
     document.getElementById("responses").replaceChildren();
     historyId = null;
     chatIDs = [];
-    const allLinks = document.querySelectorAll('.history-item');
-    allLinks.forEach(link => {
-        link.style.backgroundColor = ''; 
-        link.style.color = ''; 
-    });
+    fetchHistoryList();
 }
 
 function uuidv4() {
@@ -184,6 +177,9 @@ async function fetchHistoryList() {
                 </div>
             `;
             sidebarList.appendChild(listItem);
+            if (historyId === history.id) {
+                listItem.style.background = "gray";
+            }
         });
     } catch (error) {
         console.error("Lỗi khi lấy danh sách nhật ký:", error);
@@ -193,16 +189,7 @@ async function fetchHistoryList() {
 async function loadChats(id) {
     chatIDs = []
     historyId = id;
-
-    const allLinks = document.querySelectorAll('.history-item');
-    allLinks.forEach(link => {
-        link.style.backgroundColor = ''; 
-        link.style.color = ''; 
-    });
-
-    element = document.getElementById(`history-${id}`);
-    element.style.backgroundColor = 'gray';
-    element.style.color = 'white';
+    fetchHistoryList();
     try {
         const response = await fetch(`/get-chat-list/${id}`, {
             method: "GET",
