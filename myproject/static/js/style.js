@@ -44,10 +44,10 @@ document.getElementById("saveButton").addEventListener("click", async function()
 
         if (userMsg && botMsg) {
             try {
-                const messageParts = userMsg.innerHTML.replace(/<br>/g, '\n').split('\n');
+                const messageParts = userMsg.innerHTML.split('###### ');
                 chatItems.push({
-                    screen_name: messageParts[0].replace('Màn hình chức năng: ', '').trim(),
-                    requirement: messageParts[1].replace('Yêu cầu: ', '').trim(),
+                    screen_name: messageParts[1].replace('Màn hình chức năng: ', '').trim(),
+                    requirement: messageParts[2].replace('Yêu cầu: ', '').trim(),
                     result: botMsg.innerText.trim()
                 });
             } catch (error) {
@@ -80,6 +80,9 @@ document.getElementById("saveButton").addEventListener("click", async function()
             const responseData = await saveResponse.json();
             alert(`Lưu lịch sử thành công! ID: ${responseData.history_id}`);
             historyId = responseData.history_id;
+            element = document.getElementById(`history-${id}`);
+            element.style.backgroundColor = 'gray';
+            element.style.color = 'white';
             fetchHistoryList();
         } else {
             alert("Lưu thất bại. Hãy thử lại.");
@@ -96,6 +99,11 @@ function addNewItem() {
     document.getElementById("responses").replaceChildren();
     historyId = null;
     chatIDs = [];
+    const allLinks = document.querySelectorAll('.history-item');
+    allLinks.forEach(link => {
+        link.style.backgroundColor = ''; 
+        link.style.color = ''; 
+    });
 }
 
 function uuidv4() {
@@ -118,9 +126,8 @@ async function submitForm() {
 
     loading.classList.remove("d-none");
 
-    const text = `Màn hình chức năng: ${screen_name}<br>Yêu cầu: ${requirement}`;
+    const text = `###### Màn hình chức năng: ${screen_name}\n###### Yêu cầu: ${requirement}`;
     let randomId = uuidv4();
-    console.log(`thứ 1: ${randomId}`);
     document.getElementById("screen_name").value = "";
     document.getElementById("requirement").value = "";
 
@@ -141,13 +148,11 @@ async function submitForm() {
         let result = '';
 
         appendMessage("bot", "left", result, screen_name, randomId);
-        console.log(`thứ 2: ${randomId}`);
         while (!done) {
             const { value, done: readerDone } = await reader.read();
             done = readerDone;
             result += decoder.decode(value, { stream: true });
             const msgTextDiv = document.getElementById(`${randomId}-bot`);
-            console.log(`thứ 3: ${randomId}`);
             msgTextDiv.innerText = result;
         }
     } catch (error) {
@@ -235,9 +240,7 @@ function displayChats(chats) {
                             <div class="msg-info-name">user</div>
                             <div class="msg-info-time">${formatDate(chat.created_at)}</div>
                         </div>
-                        <div class="msg-text" id="${chat.id}">
-                            Màn hình chức năng: ${chat.screen_name}<br>Yêu cầu: ${chat.requirement}
-                        </div>
+                        <div class="msg-text" id="${chat.id}">###### Màn hình chức năng: ${chat.screen_name}<br>###### Yêu cầu: ${chat.requirement}</div>
                     </div>
                 </div>
                 <div class="msg left-msg">
@@ -247,7 +250,7 @@ function displayChats(chats) {
                             <div class="msg-info-time">${formatDate(chat.created_at)}</div>
                         </div>
                         <div class="msg-text" id="${chat.id}-bot"></div>
-                        <button class="btn btn-success mt-2 float-right" onclick="exportExcel(${chat.id},'${chat.screen_name}')">Export Excel</button>
+                        <button class="btn btn-success mt-2 float-right" onclick="exportExcel('${chat.id}','${chat.screen_name}')">Export Excel</button>
                     </div>
                 </div>
             </div> 
@@ -271,15 +274,18 @@ function appendMessage(name, side, text, screen_name, id) {
                             <div class="msg-info-name">${name}</div>
                             <div class="msg-info-time">${formatDate(new Date())}</div>
                         </div>
-                        <div class="msg-text" id="${id}">${text}</div>
+                        <div class="msg-text" id="${id}"></div>
                     </div>
                 </div>
             </div> 
         `;
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+        const msgTextDiv = document.getElementById(id);
+        msgTextDiv.innerText = text;
     } else {
         const container = document.getElementById(lastRightId);
         console.log(lastRightId);
+        let idText = `${id}`;
         if (container) {
             msgHTML = `
                 <div class="msg ${side}-msg">
@@ -289,7 +295,7 @@ function appendMessage(name, side, text, screen_name, id) {
                             <div class="msg-info-time">${formatDate(new Date())}</div>
                         </div>
                         <div class="msg-text" id="${id}-bot"></div>
-                        <button class="btn btn-success mt-2 float-right" onclick="exportExcel(${id},'${screen_name}')">Export Excel</button>
+                        <button class="btn btn-success mt-2 float-right" onclick="exportExcel('${idText}','${screen_name}')">Export Excel</button>
                     </div>
                 </div>
             `;
