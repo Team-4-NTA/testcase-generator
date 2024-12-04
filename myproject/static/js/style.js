@@ -1,5 +1,4 @@
-const responsesContainer = document.getElementById("responses");
-let lastRightId = null;
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 let historyId = null;
 let chatIDs = [];
 
@@ -19,7 +18,6 @@ document.getElementById('toggleSidebar').addEventListener('click', function() {
 });
 
 document.getElementById("saveButton").addEventListener("click", async function() {
-
     const responsesContainer = document.getElementById("responses");
     const messageContainers = responsesContainer.querySelectorAll(".msg-container"); // Get all paired messages
     const chatItems = [];
@@ -92,13 +90,20 @@ document.getElementById("saveButton").addEventListener("click", async function()
     } finally {
         loading.classList.add("d-none");
     }
-
 });
 
 function addNewItem() {
     document.getElementById("responses").replaceChildren();
     historyId = null;
     chatIDs = [];
+}
+
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0,
+            v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
 }
 
 async function submitForm() {
@@ -114,19 +119,18 @@ async function submitForm() {
     loading.classList.remove("d-none");
 
     const text = `Màn hình chức năng: ${screen_name}<br>Yêu cầu: ${requirement}`;
-
-    let randomId = window.uuidv4();
-    console.log(randomId);
-    appendMessage("user", "right", text, screen_name, randomId);
+    let randomId = uuidv4();
+    console.log(`thứ 1: ${randomId}`);
     document.getElementById("screen_name").value = "";
     document.getElementById("requirement").value = "";
 
+    appendMessage("user", "right", text, screen_name, randomId);
     try {
         const response = await fetch("", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken": window.csrfToken
+                "X-CSRFToken": csrfToken
             },
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
         });
@@ -137,56 +141,20 @@ async function submitForm() {
         let result = '';
 
         appendMessage("bot", "left", result, screen_name, randomId);
+        console.log(`thứ 2: ${randomId}`);
         while (!done) {
             const { value, done: readerDone } = await reader.read();
             done = readerDone;
             result += decoder.decode(value, { stream: true });
             const msgTextDiv = document.getElementById(`${randomId}-bot`);
+            console.log(`thứ 3: ${randomId}`);
             msgTextDiv.innerText = result;
-            responsesContainer.scrollTop = responsesContainer.scrollHeight;
-            if (msgTextDiv) {
-                const buttonHTML = `<button class="btn btn-success mt-2 float-right" onclick="exportExcel(${now},'${screen_name}')">Export Excel</button>`;
-                msgTextDiv.insertAdjacentHTML("afterend", buttonHTML);
-            } 
-        } 
-    } catch (error) {
-        console.error("Error:", error);
-    } finally {
-        loading.classList.add("d-none");
-    }
-}
-
-async function exportExcel(id, screen_name) {
-    const testCase = document.getElementById(`${id}-bot`).innerText;
-
-    try {
-        const response = await fetch("/export-excel", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": window.csrfToken
-            },
-            body: JSON.stringify({ testCase: testCase, screenName: screen_name })
-        });
-
-        if (response.ok) {
-            // Tạo link tải xuống
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${screen_name}_testcase.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-        } else {
-            const errorData = await response.json();
-            console.error("Error response:", errorData);
-            alert("Có lỗi xảy ra khi export: " + errorData.error);
         }
     } catch (error) {
-        console.error("Error export:", error);
-        alert("Có lỗi xảy ra khi export");
+        console.error("Lỗi:", error);
+        alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
+    } finally {
+        loading.classList.add("d-none"); 
     }
 }
 
@@ -235,7 +203,7 @@ async function loadChats(id) {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken": window.csrfToken
+                "X-CSRFToken": csrfToken
             }
         });
 
@@ -292,10 +260,11 @@ function displayChats(chats) {
 }
 
 function appendMessage(name, side, text, screen_name, id) {
+    const responsesContainer = document.getElementById("responses");
+    lastRightId = `msg-container-${id}`;
     if (side === "right") {
-        lastRightId = `msg-container-${id}`;
         msgHTML = `
-            <div id="msg-container-${id}" class="msg-container">
+            <div id="${lastRightId}" class="msg-container">
                 <div class="msg ${side}-msg">
                     <div class="msg-bubble">
                         <div class="msg-info">
@@ -310,6 +279,7 @@ function appendMessage(name, side, text, screen_name, id) {
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
     } else {
         const container = document.getElementById(lastRightId);
+        console.log(lastRightId);
         if (container) {
             msgHTML = `
                 <div class="msg ${side}-msg">
@@ -338,7 +308,7 @@ async function deleteHistory(history_id, event) {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': window.csrfToken
+                'X-CSRFToken': csrfToken
             }
         });
 
@@ -355,9 +325,43 @@ async function deleteHistory(history_id, event) {
     }
 }
 
+async function exportExcel(id, screen_name) {
+    const testCase = document.getElementById(`${id}-bot`).innerText;
+
+    try {
+        const response = await fetch("/export-excel", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({ testCase: testCase, screenName: screen_name })
+        });
+
+        if (response.ok) {
+            // Tạo link tải xuống
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${screen_name}_testcase.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } else {
+            const errorData = await response.json();
+            console.error("Error response:", errorData);
+            alert("Có lỗi xảy ra khi export: " + errorData.error);
+        }
+    } catch (error) {
+        console.error("Error export:", error);
+        alert("Có lỗi xảy ra khi export");
+    }
+}
+
 function formatDate(date) {
     if (!(date instanceof Date)) {
-        date = new Date(date);
+        date = new Date(date); // Convert string or number to Date
     }
 
     const h = "0" + date.getHours();
