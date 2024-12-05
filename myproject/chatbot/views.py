@@ -73,7 +73,7 @@ def get_chat_list(request, history_id):
         return JsonResponse({"error": "History not found"}, status=404)
 
 def get_history(request):
-    histories = History.objects.all().values("id", "name", "created_at")
+    histories = History.objects.all().values("id", "name", "created_at").distinct()
     return JsonResponse(list(histories), safe=False)
 
 @csrf_exempt
