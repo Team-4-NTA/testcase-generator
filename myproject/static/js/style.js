@@ -20,7 +20,12 @@ document.getElementById('toggleSidebar').addEventListener('click', function() {
 document.getElementById("saveButton").addEventListener("click", async function() {
     const responsesContainer = document.getElementById("responses");
     const messageContainers = responsesContainer.querySelectorAll(".msg-container"); // Get all paired messages
+    const botMessages = responsesContainer.querySelectorAll(".msg-text[data-loading='true']")
     const chatItems = [];
+    if (botMessages.length > 0) {
+        alert("Vui lòng đợi phản hồi bot hoàn tất trước khi lưu!");
+        return;
+    }
     const filteredContainers = Array.from(messageContainers).filter(container => {
         const chatId = container.id.split('-')[2]; 
 
@@ -141,13 +146,15 @@ async function submitForm() {
         let result = '';
 
         appendMessage("bot", "left", result, screen_name, randomId);
+        const msgTextDiv = document.getElementById(`${randomId}-bot`);
+        msgTextDiv.setAttribute("data-loading", "true");
         while (!done) {
             const { value, done: readerDone } = await reader.read();
             done = readerDone;
             result += decoder.decode(value, { stream: true });
-            const msgTextDiv = document.getElementById(`${randomId}-bot`);
             msgTextDiv.innerText = result;
         }
+        msgTextDiv.setAttribute("data-loading", "false");
     } catch (error) {
         console.error("Lỗi:", error);
         alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
