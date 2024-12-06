@@ -44,6 +44,7 @@ def chatgpt_login_testcase(request):
           "    3. Nhấn nút 'Đăng nhập'.\n"
           "Kết quả mong đợi: đăng nhập thành công"
           "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
+          "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
          )
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini-2024-07-18",
