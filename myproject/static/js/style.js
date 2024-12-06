@@ -36,7 +36,6 @@ document.getElementById("saveButton").addEventListener("click", async function()
 
         if (!chatIDs.includes(chatId)) {
             chatIDs.push(chatId);
-            console.log("Added chatId to chatIDs:", chatId);
             return true;
         }
 
@@ -148,7 +147,8 @@ async function submitForm() {
         appendMessage("bot", "left", result, screen_name, randomId);
         const msgTextDiv = document.getElementById(`${randomId}-bot`);
         msgTextDiv.setAttribute("data-loading", "true");
-        while (!done) {
+        loading.classList.add("d-none");
+        while (!done)    {
             const { value, done: readerDone } = await reader.read();
             done = readerDone;
             result += decoder.decode(value, { stream: true });
@@ -170,10 +170,13 @@ async function fetchHistoryList() {
     try {
         const response = await fetch("/get-history/");
         const histories = await response.json();
+        const uniqueHistories = histories.filter(
+            (item, index, self) => index === self.findIndex((t) => t.id === item.id)
+        );
 
-        histories.forEach(history => {
+        uniqueHistories.forEach(history => {
             const listItem = document.createElement("li");
-            listItem.className = "nav-item";
+            listItem.className = "nav-item histories";
             listItem.innerHTML = `<a class="nav-link" href="#" onclick="loadChats(${history.id})">${history.name}</a>`;
             listItem.innerHTML = `
                 <div id="history-${history.id}" 
@@ -278,7 +281,6 @@ function appendMessage(name, side, text, screen_name, id) {
         msgTextDiv.innerText = text;
     } else {
         const container = document.getElementById(lastRightId);
-        console.log(lastRightId);
         let idText = `${id}`;
         if (container) {
             msgHTML = `
@@ -313,9 +315,7 @@ async function deleteHistory(history_id, event) {
         });
 
         if (response.ok) {
-            console.log(`History with ID ${history_id} deleted successfully.`);
             alert("xóa lịch sử thành công");
-            fetchHistoryList();
             addNewItem();
         } else {
             alert("Lỗi khi xóa lịch sử.");
