@@ -4,7 +4,7 @@ from django.http import JsonResponse,StreamingHttpResponse, HttpResponse
 import openai
 import json
 from .models import Chat, History
-from datetime import datetime
+from datetime import datetime, date
 import openpyxl
 import os
 from openpyxl.styles import Alignment
@@ -158,6 +158,7 @@ def write_test_case_to_excel(request):
 
             # Ghi "Tên màn hình" vào ô đầu tiên
             sheet["A2"] = screen_name
+            sheet["F2"] = date.today()
 
             test_cases = data_test_case.split("### Test case")[1:]
             row = 9
