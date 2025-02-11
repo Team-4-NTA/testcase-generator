@@ -26,7 +26,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: 127.0.0.1
       MYSQL_DATABASE: create_testcase_ai
-      MYSQL_USER: root
+      MYSQL_USER: create_testcase_ai
       MYSQL_PASSWORD: Asdf1234#
     ports:
       - "3307:3306"
