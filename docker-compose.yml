@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+    container_name: django_app
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./myproject:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_NAME: create_testcase_ai
+      DATABASE_USER: root
+      DATABASE_PASSWORD: Asdf1234#
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 3306
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 127.0.0.1
+      MYSQL_DATABASE: create_testcase_ai
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Asdf1234#
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

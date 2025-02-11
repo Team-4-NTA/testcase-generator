@@ -86,9 +86,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'create_testcase_ai',
-        'HOST': 'localhost',
+        'HOST': '127.0.0.1',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': 'Asdf1234#',
         'PORT': '3306',
     }
 }
