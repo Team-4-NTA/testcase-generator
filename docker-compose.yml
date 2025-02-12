@@ -24,7 +24,7 @@ services:
     container_name: mysql_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 127.0.0.1
+      MYSQL_ROOT_PASSWORD: Asdf1234#
       MYSQL_DATABASE: create_testcase_ai
       MYSQL_USER: create_testcase_ai
       MYSQL_PASSWORD: Asdf1234#
