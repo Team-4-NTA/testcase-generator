@@ -10,7 +10,7 @@ import os
 from openpyxl.styles import Alignment
 from django.views.decorators.csrf import csrf_exempt
 
-openai.api_key = ''
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def chatgpt_login_testcase(request):
     if request.method == "POST":
@@ -46,18 +46,20 @@ def chatgpt_login_testcase(request):
           "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
           "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
          )
-        response = openai.ChatCompletion.create(
+
+        response = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[ 
                 {"role": "user", "content": prompt}
             ],
-            stream=True 
+            stream=True
         )
 
+        # Stream phản hồi từ OpenAI
         def stream_response():
             for chunk in response:
-                if 'choices' in chunk:
-                    content = chunk['choices'][0]['delta'].get('content', '')
+                if chunk.choices:
+                    content = chunk.choices[0].delta.content or ""
                     yield content
 
         return StreamingHttpResponse(stream_response(), content_type='text/plain')

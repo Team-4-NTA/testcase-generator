@@ -18,6 +18,9 @@ services:
       DATABASE_PASSWORD: Asdf1234#
       DATABASE_HOST: 127.0.0.1
       DATABASE_PORT: 3306
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    env_file:
+      - .env
 
   db:
     image: mysql:8.0

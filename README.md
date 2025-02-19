@@ -14,3 +14,6 @@ project tạo tự động test case
 7. python manage.py makemigrations
 
 8. python manage.py migrate
+
+9. pip install python-dotenv
+
