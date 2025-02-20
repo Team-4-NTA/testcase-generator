@@ -10,7 +10,7 @@ import os
 from openpyxl.styles import Alignment
 from django.views.decorators.csrf import csrf_exempt
 
-client = openai.OpenAI(api_key="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")
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def chatgpt_login_testcase(request):
     if request.method == "POST":
