@@ -2,16 +2,17 @@
 {% block content %}
 <div class="h-100 container">
     <nav id="sidebar" class="sidebar">
-        <button class="toggle-btn" id="toggleSidebar">
+      <div class="topview">
+        <button class="toggle-btn" id="toggleSidebar" style="color: #000;">
             <i class="fas fa-bars"></i>
         </button>
-        <h2>Nhật Ký</h2>
-        <ul id="sidebar-list" class="nav flex-column" style="margin: 0; padding: 0;">
+      </div>
+        <ul id="sidebar-list" class="nav flex-column" style="margin: 20px 0px; padding: 0;">
             <!-- List items -->
         </ul>
     </nav>
     <main class="content">
-        <div class="top-bar bg-dark text-white p-2 d-flex justify-content-end align-items-center">
+        <div class="top-bar text-white p-2 d-flex justify-content-end align-items-center">
             <button class="btn btn-secondary mr-2" onclick="addNewItem()">
                 <i class="fas fa-plus"></i> Tạo mới
             </button>
@@ -29,20 +30,33 @@
                 </div>
             </div>
         </div>
-        <div class="flex-grow-1 d-flex flex-column p-3" style="height: calc(100vh - 54px);">
-            <div id="responses" class="msger-chat" style="height: auto; overflow-y: auto; overflow-x: hidden;">
+        <div class="flex-grow-1 d-flex flex-column p-2" style="height: calc(100vh - 54px);">
+            <div id="responses" class="msger-chat">
                 <!-- Các câu hỏi và câu trả lời sẽ được thêm vào đây -->
             </div>
             <div id="loading" class="typing-indicator d-none">
                 <i style="margin-right:5px;color:gray">Vui lòng đợi trong vài giây</i>
                 <span></span><span></span><span></span>
             </div>
-        
-            <div class="input-form d-flex align-items-stretch mt-3">
-                <textarea id="screen_name" class="form-control flex-fill w-50 mr-2" placeholder="Nhập màn hình chức năng (ví dụ: login,..)"></textarea>
-                <textarea id="requirement" class="form-control flex-fill mr-2" placeholder="Nhập yêu cầu màn hình"></textarea>
-                <button class="btn btn-primary" onclick="submitForm()">Gửi</button>
+            <div class="input-form d-flex align-items-stretch mt-2">
+              <div class="input-text mr-2 flex-fill">
+                <div class="rounded">
+                  <div class="mb-3">
+                      <label class="fw-bold">Màn hình:</label>
+                      <input id="screen_name" class="custom-textarea" placeholder="Nhập nội dung..."/>
+                  </div>
+                  <div class="mb-3">
+                      <label class="fw-bold">Yêu cầu:</label>
+                      <textarea id="requirement" class="custom-textarea" placeholder="Nhập yêu cầu..."></textarea>
+                  </div>
+              </div>
+              </div>
+              <div class="d-flex flex-column">
+                <button class="btn btn-secondary mb-2" onclick="submitForm()">SEND</button>
+                <button class="btn btn-secondary mb-2">TEMPLATE</button>
+                <button class="btn btn-secondary">UPLOAD</button>
             </div>
+          </div>
         </div>        
     </main>
 </div>

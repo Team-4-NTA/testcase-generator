@@ -130,6 +130,7 @@ async function submitForm() {
 
     appendMessage("user", "right", text, screen_name, randomId);
     try {
+        console.log("Data gửi lên:", JSON.stringify({ screen_name, requirement }));
         const response = await fetch("", {
             method: "POST",
             headers: {

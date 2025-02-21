@@ -12,7 +12,7 @@ body, html {
 }
 
 .sidebar {
-    background-color: #333;
+    background-color: #7F7905;;
     color: white;
     height: 100%;
     transition: width 0.3s ease;
@@ -68,7 +68,7 @@ body, html {
 
 .sidebar h2 {
     text-align: center;
-    margin-top: 50px; 
+    margin-top: 10px; 
 }
 
 .sidebar ul {
@@ -116,20 +116,17 @@ body, html {
     border-radius: 4px;
 }
 
-.input-form {
-    gap: 10px;
-}
-
-.input-form .form-control {
-    height: 70px;
-}
-
 .input-form button {
-    height: 50px;
+    height: 40px;
+    width: 150px;
 }
 
-.input-form textarea {
-    min-height: 100px;
+.input-text {
+    height: 138px;
+    background-color: #F4F0A5;
+    padding: 16px;
+    border-radius: 10px;
+    overflow-y: auto;
 }
 
 .typing-indicator {
@@ -237,6 +234,11 @@ body, html {
 .msg-info-time {
     font-size: 0.85em;
 }
+
+.left-msg .msg-text {
+    max-height: 400px;
+    overflow-y: auto;
+}
   
 .left-msg .msg-bubble {
     border-bottom-left-radius: 0;
@@ -266,4 +268,66 @@ body, html {
     box-sizing: border-box;   
     background-color: #f9f9f9;
     border-radius: 5px;      
+}
+
+.sidebar .topview {
+    background-color: #D8D14D; /* Màu nền khác cho phần trên */
+    padding: 27px;
+    text-align: center;
+}
+
+.top-bar {
+    background-color: #D8D14D;
+}
+
+.btn-secondary {
+    background-color: #42401D;
+}
+
+.histories {
+    margin: 2px 12px;
+    background-color: #42401D;
+    border-radius: 10px;
+}
+
+.msger-chat {
+    margin: 0px;
+    padding: 16px;
+    background-color: #BEBB81;
+    border-radius: 10px;
+}
+
+.mt-3 {
+    margin-top: 0.5rem !important;
+}
+
+.my-3 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+#screen_requirement {
+    background-color: #F4F0A5;
+    color: black;
+}
+
+.custom-input, .custom-textarea {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1rem;
+    width: 100%;
+    resize: none;
+}
+
+.border {
+    overflow-y: auto;
+}
+
+.fw-bold {
+    font-weight: bold !important;
+}
+
+.custom-input::placeholder, .custom-textarea::placeholder {
+    color: #aaa;
 }
