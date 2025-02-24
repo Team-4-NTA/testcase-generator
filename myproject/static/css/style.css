@@ -127,6 +127,7 @@ body, html {
     padding: 16px;
     border-radius: 10px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .typing-indicator {
@@ -320,6 +321,26 @@ body, html {
     resize: none;
 }
 
+.custom-input {
+    flex: 1;
+}
+
+.custom-textarea {
+    min-height: 50px;
+    max-height: none;
+    overflow: hidden;
+    resize: none;
+    width: 100%;
+}
+
+.custom-textarea::-webkit-scrollbar {
+    display: none;
+}
+.custom-textarea {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
 .border {
     overflow-y: auto;
 }
@@ -330,4 +351,35 @@ body, html {
 
 .custom-input::placeholder, .custom-textarea::placeholder {
     color: #aaa;
+}
+
+.checkbox-group {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 5px 10px;
+    display: flex;
+    gap: 15px;
+}
+
+.rounded {
+    padding-top: 10px;
+}
+
+.form-group-custom {
+    display: flex;
+    align-items: center; 
+    gap: 10px; 
+    white-space: nowrap; 
+    align-items: baseline;
+}
+
+.custom-input {
+    height: 50px; 
+    max-height: 50px;
+    flex-grow: 1;
+    padding: 0px;
+    min-width: 0;
+    overflow: hidden; 
+    white-space: nowrap; 
 }

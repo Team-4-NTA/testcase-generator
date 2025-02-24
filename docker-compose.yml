@@ -5,11 +5,11 @@ services:
     build:
       context: .
     container_name: django_app
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8888
     volumes:
       - ./myproject:/app
     ports:
-      - "8000:8000"
+      - "8888:8888"
     depends_on:
       - db
     environment:
