@@ -17,6 +17,23 @@ document.getElementById('toggleSidebar').addEventListener('click', function() {
     }
 });
 
+document.addEventListener("DOMContentLoaded", function() {
+    const textarea = document.getElementById("requirement");
+
+    textarea.addEventListener("input", function() {
+        this.style.height = "auto"; // Reset height trước khi đo
+        this.style.height = this.scrollHeight + "px"; // Cập nhật chiều cao theo nội dung
+    });
+});
+
+function toggleCheckbox(selected) {
+    document.querySelectorAll('.checkbox-group input[type="checkbox"]').forEach(checkbox => {
+        if (checkbox !== selected) {
+            checkbox.checked = false;
+        }
+    });
+}
+
 document.getElementById("saveButton").addEventListener("click", async function() {
     const responsesContainer = document.getElementById("responses");
     const messageContainers = responsesContainer.querySelectorAll(".msg-container"); // Get all paired messages
