@@ -34,7 +34,86 @@ function toggleCheckbox(selected) {
     });
 }
 
-document.getElementById("saveButton").addEventListener("click", async function() {
+// document.getElementById("saveButton").addEventListener("click", async function() {
+//     const responsesContainer = document.getElementById("responses");
+//     const messageContainers = responsesContainer.querySelectorAll(".msg-container"); // Get all paired messages
+//     const botMessages = responsesContainer.querySelectorAll(".msg-text[data-loading='true']")
+//     const chatItems = [];
+//     if (botMessages.length > 0) {
+//         alert("Vui lòng đợi phản hồi bot hoàn tất trước khi lưu!");
+//         return;
+//     }
+//     const filteredContainers = Array.from(messageContainers).filter(container => {
+//         const chatId = container.id.split('-')[2]; 
+
+//         if (!chatId || chatId.trim() === "") {
+//             console.warn("Invalid chatId:", chatId);
+//             return false; 
+//         }
+
+//         if (!chatIDs.includes(chatId)) {
+//             chatIDs.push(chatId);
+//             return true;
+//         }
+
+//         return false;
+//     });
+
+//     filteredContainers.forEach(container => {
+//         const userMsg = container.querySelector(".right-msg .msg-text");
+//         const botMsg = container.querySelector(".left-msg .msg-text");
+
+//         if (userMsg && botMsg) {
+//             try {
+//                 const messageParts = userMsg.innerHTML.split('###### ');
+//                 chatItems.push({
+//                     screen_name: messageParts[1].replace('Màn hình chức năng: ', '').trim(),
+//                     requirement: messageParts[2].replace('Yêu cầu: ', '').trim(),
+//                     result: botMsg.innerText.trim()
+//                 });
+//             } catch (error) {
+//                 console.error("Error processing message container:", error, container);
+//             }
+//         } else {
+//             console.warn("Missing user or bot message in container:", container);
+//         }
+//     });
+
+//     if (chatItems.length === 0) {
+//         alert("Không có lịch sử nào để lưu!");
+//         return;
+//     }
+
+//     try {
+//         const saveResponse = await fetch("/save-history/", {  
+//             method: "POST",
+//             headers: {
+//                 "Content-Type": "application/json",
+//                 "X-CSRFToken": csrfToken
+//             },
+//             body: JSON.stringify({ 
+//                 history_id: historyId, // Send historyId if it exists
+//                 chats: chatItems
+//             })
+//         });
+
+//         if (saveResponse.ok) {
+//             const responseData = await saveResponse.json();
+//             alert(`Lưu lịch sử thành công! ID: ${responseData.history_id}`);
+//             historyId = responseData.history_id;
+//             fetchHistoryList();
+//         } else {
+//             alert("Lưu thất bại. Hãy thử lại.");
+//         }
+//     } catch (error) {
+//         console.error("Lỗi khi lưu:", error);
+//         alert("Có lỗi xảy ra trong quá trình lưu dữ liệu.");
+//     } finally {
+//         loading.classList.add("d-none");
+//     }
+// });
+
+async function saveResponse() {
     const responsesContainer = document.getElementById("responses");
     const messageContainers = responsesContainer.querySelectorAll(".msg-container"); // Get all paired messages
     const botMessages = responsesContainer.querySelectorAll(".msg-text[data-loading='true']")
@@ -111,7 +190,7 @@ document.getElementById("saveButton").addEventListener("click", async function()
     } finally {
         loading.classList.add("d-none");
     }
-});
+}
 
 function addNewItem() {
     document.getElementById("responses").replaceChildren();
@@ -173,6 +252,7 @@ async function submitForm() {
             msgTextDiv.innerText = result;
         }
         msgTextDiv.setAttribute("data-loading", "false");
+        saveResponse();
     } catch (error) {
         console.error("Lỗi:", error);
         alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
