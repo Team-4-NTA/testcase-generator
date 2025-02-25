@@ -195,12 +195,12 @@ async function fetchHistoryList() {
         uniqueHistories.forEach(history => {
             const listItem = document.createElement("li");
             listItem.className = "nav-item histories";
-            listItem.innerHTML = `<a class="nav-link" href="#" onclick="loadChats(${history.id})">${history.name}</a>`;
+            // listItem.innerHTML = `<a class="nav-link" href="#" onclick="loadChats(${history.id})">${history.title}</a>`;
             listItem.innerHTML = `
                 <div id="history-${history.id}" 
                     class="history-item d-flex justify-content-between align-items-center px-3" 
                     onclick="loadChats(${history.id})", style="padding: 8px;">
-                    <p class="mb-0 text-left flex-grow-1">${history.name}</p>
+                    <p class="mb-0 text-left flex-grow-1">${history.title}</p>
                     <button class="btn btn-danger btn-sm ms-2" onclick="deleteHistory(${history.id}, event)">Xóa</button>
                 </div>
             `;

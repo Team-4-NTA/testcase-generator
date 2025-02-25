@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import JsonResponse,StreamingHttpResponse, HttpResponse
 import openai
 import json
-from .models import Chat, History
+from .models import Chat, ChatDetail
 from datetime import datetime, date
 import openpyxl
 import os
@@ -49,7 +49,7 @@ def chatgpt_login_testcase(request):
 
         response = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
-            messages=[ 
+            messages=[
                 {"role": "user", "content": prompt}
             ],
             stream=True
@@ -68,14 +68,16 @@ def chatgpt_login_testcase(request):
 
 def get_chat_list(request, history_id):
     try:
-        history = History.objects.get(id=history_id)
-        chats = history.chats.values("id", "screen_name", "requirement", "result", "created_at")
+        # history = Chat.objects.get(id=history_id)
+        chats = ChatDetail.objects.filter(chat_id=history_id).values(
+            "id", "screen_name", "requirement", "result", "created_at"
+        )
         return JsonResponse(list(chats), safe=False)
-    except History.DoesNotExist:
+    except Chat.DoesNotExist:
         return JsonResponse({"error": "History not found"}, status=404)
 
 def get_history(request):
-    histories = History.objects.all().values("id", "name", "created_at").distinct()
+    histories = Chat.objects.all().values("id", "title", "created_at").distinct()
     return JsonResponse(list(histories), safe=False)
 
 @csrf_exempt
@@ -84,62 +86,66 @@ def save_history(request):
         try:
             data = json.loads(request.body)
             history_id = data.get('history_id')
-            chats_data = data.get('chats', [])
+            chats_data = data.get('chats')
 
             if not chats_data:
                 return JsonResponse({"error": "No chats provided."}, status=400)
 
             chat_objects = []
+
+            # Nếu có history_id, kiểm tra xem Chat có tồn tại không
+            history = None
+            if history_id:
+                try:
+                    history = Chat.objects.get(id=history_id)
+                except Chat.DoesNotExist:
+                    return JsonResponse({"error": "History not found."}, status=404)
+            else:
+                # Nếu không có history_id, tạo mới Chat
+                history = Chat.objects.create(title=chats_data[0]['screen_name'])
+
+            # Tạo ChatDetail và liên kết với Chat
             for chat_data in chats_data:
                 screen_name = chat_data.get('screen_name')
 
                 if not screen_name or screen_name.strip() == "" or screen_name == "N/A":
-                    continue 
+                    continue
 
                 requirement = chat_data.get('requirement')
                 result = chat_data.get('result')
 
-                chat = Chat.objects.create(
+                chat = ChatDetail.objects.create(
+                    chat_id=history,  
                     screen_name=screen_name,
                     requirement=requirement,
-                    result=result
+                    result=result,
+                    chat_type=2,  # Bắt buộc phải có
+                    url_requirement=chat_data.get('url_requirement', ''),  # Tránh lỗi None
+                    url_result=chat_data.get('url_result', '') 
                 )
 
                 chat_objects.append(chat)
-
-            if history_id:
-                try:
-                    history = History.objects.get(id=history_id)
-                    history.chats.add(*chat_objects)
-                except History.DoesNotExist:
-                    return JsonResponse({"error": "History not found."}, status=404)
-            else:
-                history = History.objects.create(name=chat_objects[0].screen_name)
-                history.chats.set(chat_objects)
 
             return JsonResponse({"success": True, "history_id": history.id})
 
         except Exception as e:
             print("Error:", e)
-            return JsonResponse({"error": "There was an error saving the history."}, status=500)
+            return JsonResponse({"error": f"There was an error saving the history: {str(e)}"}, status=500)
     else:
         return JsonResponse({"error": "Invalid method."}, status=405)
-    
+
 @csrf_exempt
 def delete_history(request, history_id):
     try:
-        history = History.objects.get(id=history_id)
-        chats = history.chats.all()
+        history = Chat.objects.get(id=history_id)  # Lấy từ Chat
+        chats = ChatDetail.objects.filter(chat_id=history)  # Lấy tất cả chat_detail
 
-        for chat in chats:
-            chat.delete()
-
-        # Xóa history
-        history.delete()
+        chats.delete()  # Xóa tất cả ChatDetail
+        history.delete()  # Xóa Chat
 
         return JsonResponse({"message": "History and associated chats deleted successfully"}, status=200)
 
-    except History.DoesNotExist:
+    except Chat.DoesNotExist:
         return JsonResponse({"error": "History not found"}, status=404)
 
 def write_test_case_to_excel(request):
@@ -179,7 +185,7 @@ def write_test_case_to_excel(request):
                         columns.append(line.split(":")[1].strip())
                     elif "Dữ liệu kiểm tra:" in line:
                         data_test = line.split(":", 1)[1].strip()
-                        data_test = data_test.replace(",", ",\n") 
+                        data_test = data_test.replace(",", ",\n")
                         columns.append(data_test)
                     elif "Điều kiện:" in line:
                         columns.append(line.split(":")[1].strip())
