@@ -3,10 +3,12 @@ from openpyxl import load_workbook
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse,StreamingHttpResponse, HttpResponse
-import os
+import json, re, os
 import openpyxl
+from openpyxl.styles import Alignment
 from datetime import date
 import openai
+from .models import Chat, ChatDetail
 
 client = openai.OpenAI(api_key="")
 
@@ -29,18 +31,59 @@ def upload_file(request):
         try:
             if isinstance(data, dict) and "item" in data and data["item"]:
                 result = create_testcase(data)
-                def stream_response():
-                    for chunk in result:
-                        if chunk.choices:
-                            content = chunk.choices[0].delta.content or ""
-                            yield content
-                return StreamingHttpResponse(stream_response(), content_type='text/plain')
+                if "<!DOCTYPE" in result.choices[0].message.content or "<html>" in result.choices[0].message.content:
+                    print("❌ Lỗi: API trả về HTML thay vì JSON!")
+                    return JsonResponse({"error": "API returned an invalid response"}, status=500)
+                test_case_text = result.choices[0].message.content
+                json_data = parse_test_cases(test_case_text)
+                save_upload(data.get('screen_name', ''), json_data)
+                return JsonResponse({"screen_name": data.get('screen_name', ''), "test_cases": json_data})
             return JsonResponse({'message': 'Không có data trả về'}, status=400)           
         except Exception as e:
            return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'message': 'Không có file nào được tải lên!'}, status=400)
 
+def parse_test_cases(text):
+    """
+    Parse nội dung test case thành danh sách JSON.
+    """
+    test_cases = []
+    matches = re.split(r'### Test case \d+', text)
+    
+    for case in matches[1:]:
+        columns = {}
+        lines = case.split("\n")
+        steps = []
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Số thứ tự:"):
+                columns["id"] = line.split(":")[1].strip()
+            elif line.startswith("Độ ưu tiên:"):
+                columns["priority"] = line.split(":")[1].strip()
+            elif line.startswith("Loại:"):
+                columns["type"] = line.split(":")[1].strip()
+            elif line.startswith("Mục tiêu:"):
+                columns["goal"] = line.split(":")[1].strip()
+            elif line.startswith("Dữ liệu kiểm tra:"):
+                columns["test_data"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Điều kiện:"):
+                columns["condition"] = line.split(":")[1].strip()
+            elif line.startswith("Các bước kiểm tra:"):
+                steps = []
+            elif re.match(r'^\d+\.', line):
+                steps.append(line.strip())
+            elif line.startswith("Kết quả mong đợi:"):
+                columns["expected_result"] = line.split(":")[1].strip()
+            elif line.startswith("Ghi chú:"):
+                columns["note"] = line.split(":")[1].strip()
+
+        columns["steps"] = "\n".join(steps)
+        if len(columns) == 9:
+            test_cases.append(columns)
+
+    return json.dumps(test_cases, ensure_ascii=False, indent=2)
 
 def create_testcase(data):
     screen_name = data.get('screen_name', '')
@@ -82,7 +125,6 @@ def create_testcase(data):
         messages=[
             {"role": "user", "content": prompt}
         ],
-        stream=True
     )
 
     return response
@@ -198,5 +240,97 @@ def data_api(file):
     data["item"] = item
     return data
 
+def write_test_case_to_excel(screen_name, test_cases_json):
+    try:
+        current_dir = os.path.dirname(__file__)
+        template_file_path = os.path.join(current_dir, "files/format-testcase.xlsx")
 
+        if not os.path.exists(template_file_path):
+            raise FileNotFoundError("Template file not found!")
 
+        workbook = openpyxl.load_workbook(template_file_path)
+        sheet = workbook.active
+
+        # Ghi "Tên màn hình" vào ô đầu tiên
+        sheet["A2"] = screen_name
+        sheet["F2"] = date.today()
+
+        test_cases = json.loads(test_cases_json)  # Chuyển JSON string thành list
+        row = 9
+
+        for case in test_cases:
+            sheet[f"A{row}"] = case.get("id", "")
+            sheet[f"B{row}"] = case.get("priority", "")
+            sheet[f"C{row}"] = case.get("type", "")
+            sheet[f"D{row}"] = case.get("goal", "")
+            sheet[f"E{row}"] = case.get("test_data", "").replace(",", ",\n")
+            sheet[f"F{row}"] = case.get("condition", "")
+            sheet[f"G{row}"] = case.get("steps", "")
+            sheet[f"H{row}"] = case.get("expected_result", "")
+            sheet[f"I{row}"] = case.get("note", "")
+            row += 1
+
+        for row in sheet.iter_rows(min_row=9, max_row=row - 1):
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True)
+
+        # Tạo thư mục upload nếu chưa có
+        upload_dir = os.path.join(current_dir, "upload")
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Đường dẫn lưu file
+        file_name = f"{screen_name}_testcase.xlsx"
+        file_path = os.path.join(upload_dir, file_name)
+
+        workbook.save(file_path)
+
+        return file_path  # Trả về đường dẫn file đã lưu
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return None
+
+@csrf_exempt
+def save_upload(screen_name, data):
+    file_path = write_test_case_to_excel(screen_name, data)
+    try:
+        history_id = data.get('history_id')
+        chat_data = data.get('chat')
+
+        if not chat_data:
+            return JsonResponse({"error": "No chats provided."}, status=400)
+
+        chat_objects = []
+
+        # Nếu có history_id, kiểm tra xem Chat có tồn tại không
+        history = None
+        if history_id:
+            try:
+                history = Chat.objects.get(id=history_id)
+            except Chat.DoesNotExist:
+                return JsonResponse({"error": "History not found."}, status=404)
+        else:
+            # Nếu không có history_id, tạo mới Chat
+            history = Chat.objects.create(title=chat_data['screen_name'])
+
+        # Tạo ChatDetail và liên kết với Chat
+        screen_name = chat_data.get('screen_name')
+        requirement = chat_data.get('requirement')
+        result = chat_data.get('result')
+
+        chat = ChatDetail.objects.create(
+            chat_id=history,  
+            screen_name=screen_name,
+            requirement='',
+            result=result,
+            chat_type=2,
+            url_requirement=chat_data.get('url_requirement', ''),
+            url_result=file_path 
+        )
+
+        chat_objects.append(chat)
+        return JsonResponse({"success": True, "history_id": history.id})
+
+    except Exception as e:
+        print("Error:", e)
+        return JsonResponse({"error": f"There was an error saving the history: {str(e)}"}, status=500)

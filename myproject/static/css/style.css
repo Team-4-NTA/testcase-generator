@@ -192,14 +192,13 @@ body, html {
     background: rgb(122, 116, 116);
 }
   
-.msg {
-    display: flex;
-    align-items: flex-end;
-    margin-bottom: 10px;
-}
-  
+
 .msg:last-of-type {
     margin: 0;
+}
+
+.msg {
+    margin-bottom: 10px !important;
 }
   
 .msg-img {
@@ -213,11 +212,16 @@ body, html {
 }
   
 .msg-bubble {
-    max-width: 80%;
     padding: 15px;
     border-radius: 15px;
-    background: var(--left-msg-bg);
-    background-color: antiquewhite;
+}
+
+.left-msg {
+    max-width: 80%;
+}
+
+.left-msg .msg-bubble {
+    background: var(--left-msg-bg, antiquewhite);
 }
   
 .msg-info {
@@ -239,6 +243,7 @@ body, html {
 .left-msg .msg-text {
     max-height: 400px;
     overflow-y: auto;
+    overflow-x: auto;
 }
   
 .left-msg .msg-bubble {
@@ -246,12 +251,13 @@ body, html {
 }
   
 .right-msg {
+    display: flex;
+    align-items: flex-end;
     flex-direction: row-reverse;
 }
   
 .right-msg .msg-bubble {
-    background: var(--right-msg-bg);
-    color: black;
+    background: beige;
     border-bottom-right-radius: 0;
 }
   
@@ -259,10 +265,13 @@ body, html {
     margin: 0 0 0 10px;
 }
 
-.msg-text {
-    max-width: 100%;          
+.right-msg .msg-text {          
     overflow-wrap: break-word; 
-    word-break: break-word;    
+    word-break: break-word;  
+}
+
+.msg-text {
+    max-width: 100%;
     overflow-y: auto;        
     padding: 10px;           
     border: 1px solid #ccc;  
