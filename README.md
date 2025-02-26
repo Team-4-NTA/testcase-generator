@@ -18,7 +18,7 @@ project tạo tự động test case
 9. pip install python-dotenv
 
 //build lại docker
-10. docker build -t my-django-app .
+10. docker build -t my-django-  app .
 
 //check version pylint đã có chưa
 11. docker run --rm my-django-app pylint --version

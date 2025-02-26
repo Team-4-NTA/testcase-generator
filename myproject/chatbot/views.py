@@ -4,13 +4,13 @@ from django.http import JsonResponse,StreamingHttpResponse, HttpResponse
 import openai
 import json
 from .models import Chat, ChatDetail
-from datetime import datetime, date
+from datetime import date, time
 import openpyxl
-import os
+import os, re
 from openpyxl.styles import Alignment
 from django.views.decorators.csrf import csrf_exempt
 
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = openai.OpenAI(api_key="")
 
 def chatgpt_login_testcase(request):
     if request.method == "POST":
@@ -45,32 +45,68 @@ def chatgpt_login_testcase(request):
           "Kết quả mong đợi: đăng nhập thành công"
           "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
           "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
-         )
+        )
 
         response = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "user", "content": prompt}
-            ],
-            stream=True
+            ]
         )
-
-        # Stream phản hồi từ OpenAI
-        def stream_response():
-            for chunk in response:
-                if chunk.choices:
-                    content = chunk.choices[0].delta.content or ""
-                    yield content
-
-        return StreamingHttpResponse(stream_response(), content_type='text/plain')
+        if "<!DOCTYPE" in response.choices[0].message.content or "<html>" in response.choices[0].message.content:
+            print("❌ Lỗi: API trả về HTML thay vì JSON!")
+            return JsonResponse({"error": "API returned an invalid response"}, status=500)
+        test_case_text = response.choices[0].message.content
+        test_cases = parse_test_cases(test_case_text)
+        return JsonResponse({"screen_name": screen_name, "test_cases": test_cases})
 
     return render(request, "chatbot.html")
 
+def parse_test_cases(text):
+    """
+    Parse nội dung test case thành danh sách JSON.
+    """
+    test_cases = []
+    matches = re.split(r'### Test case \d+', text)
+    
+    for case in matches[1:]:
+        columns = {}
+        lines = case.split("\n")
+        steps = []
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Số thứ tự:"):
+                columns["id"] = line.split(":")[1].strip()
+            elif line.startswith("Độ ưu tiên:"):
+                columns["priority"] = line.split(":")[1].strip()
+            elif line.startswith("Loại:"):
+                columns["type"] = line.split(":")[1].strip()
+            elif line.startswith("Mục tiêu:"):
+                columns["goal"] = line.split(":")[1].strip()
+            elif line.startswith("Dữ liệu kiểm tra:"):
+                columns["test_data"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Điều kiện:"):
+                columns["condition"] = line.split(":")[1].strip()
+            elif line.startswith("Các bước kiểm tra:"):
+                steps = []
+            elif re.match(r'^\d+\.', line):
+                steps.append(line.strip())
+            elif line.startswith("Kết quả mong đợi:"):
+                columns["expected_result"] = line.split(":")[1].strip()
+            elif line.startswith("Ghi chú:"):
+                columns["note"] = line.split(":")[1].strip()
+
+        columns["steps"] = "\n".join(steps)
+        if len(columns) == 9:
+            test_cases.append(columns)
+
+    return json.dumps(test_cases, ensure_ascii=False, indent=2)
+
 def get_chat_list(request, history_id):
     try:
-        # history = Chat.objects.get(id=history_id)
         chats = ChatDetail.objects.filter(chat_id=history_id).values(
-            "id", "screen_name", "requirement", "result", "created_at"
+            "id", "screen_name", "requirement", "result", "url_result", "created_at"
         )
         return JsonResponse(list(chats), safe=False)
     except Chat.DoesNotExist:
