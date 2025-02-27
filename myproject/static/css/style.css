@@ -383,3 +383,55 @@ body, html {
     overflow: hidden; 
     white-space: nowrap; 
 }
+
+
+
+.chat-container {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 600px;
+}
+
+.file-box {
+    display: flex;
+    align-items: center;
+    background-color: #262626;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    width: 200px;
+}
+
+.file-box img {
+    width: 34px;
+    height: 34px;
+    margin-right: 10px;
+}
+
+.file-name {
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.file-type {
+    font-size: 12px;
+    color: #b3b3b3;
+}
+
+.chat-message {
+    margin-top: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.code-box {
+    background-color: #3a3a3a;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #e0e0e0;
+}
