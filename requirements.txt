@@ -2,3 +2,4 @@ django
 mysql-connector-python
 openai
 openpyxl
+pylint
