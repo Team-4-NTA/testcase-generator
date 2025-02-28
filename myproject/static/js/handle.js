@@ -6,29 +6,32 @@ function triggerFileInput() {
 function handleFileChange(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        // Kiểm tra đuôi file
+        const fileName = file.name; // Lấy tên file
         const allowedExtensions = ['xlsx', 'xls'];
-        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+
         if (!allowedExtensions.includes(fileExtension)) {
             alert('Vui lòng chọn file Excel (xlsx, xls)!');
             return;
         }
-        msgHTML = `
-                 <div class="msg-container">
-                    <div class="msg right-msg">
-                        <div class="file-box">
-                            <img src="static/image/sheets.png" alt="file">
-                            <div>
-                                <div class="file-name">spec.xlsx</div>
-                                <div class="file-type">Bảng tính</div>
-                            </div>
+
+        const msgHTML = `
+            <div class="msg-container">
+                <div class="msg right-msg">
+                    <div class="file-box">
+                        <img src="static/image/sheets.png" alt="file">
+                        <div>
+                            <div class="file-name">${fileName}</div> <!-- Hiển thị tên file thực tế -->
+                            <div class="file-type">Bảng tính</div>
                         </div>
                     </div>
-                </div>`
+                </div>
+            </div>`;
+
         document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
 
         // Gọi hàm upload file nếu file hợp lệ
-        // uploadExcel(file);
+        uploadExcel(file);
     }
 }
 async function uploadExcel(file) {

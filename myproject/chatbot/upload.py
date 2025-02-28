@@ -23,13 +23,11 @@ def upload_file(request):
         if validate_file_spec(file):
             data = data_spec(file)
         elif validate_file_api(file):
-            data = data_api(file)
-           
+            data = data_api(file)  
         else:
             return JsonResponse({'message': 'Template spec không đúng định dạng'}, status=400)    
-        
         try:
-            if(data):
+            if isinstance(data, dict) and "item" in data and data["item"]:
                 result = create_testcase(data)
                 def stream_response():
                     for chunk in result:
@@ -45,11 +43,13 @@ def upload_file(request):
 
 
 def create_testcase(data):
-    screen_name = data['screen_name']
-    requirement = data['requirement']
+    screen_name = data.get('screen_name', '')
+    requirement = data.get('requirement', '')
     item =  data['item']
-
-    prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}' và gồm những item hiển thị có những điều kiện sau: {item} "
+  
+    prompt = (f"Tạo test case cho màn hình {screen_name}" +
+        (f" với yêu cầu '{requirement}'" if requirement else "") +
+        f" và gồm những item hiển thị có những điều kiện sau: {item} "
         "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
         "Số thứ tự: <số thứ tự>\n"
         "Độ ưu tiên: <độ ưu tiên của test case>\n"
@@ -72,7 +72,7 @@ def create_testcase(data):
         "    1. Nhập 'user123' vào trường Tên người dùng.\n"
         "    2. Nhập 'password123' vào trường Mật khẩu.\n"
         "    3. Nhấn nút 'Đăng nhập'.\n"
-        "Kết quả mong đợi: đăng nhập thành công"
+        "Kết quả mong đợi: đăng nhập thành công\n"
         "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
         "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
         )

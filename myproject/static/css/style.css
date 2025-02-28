@@ -402,7 +402,8 @@ body, html {
     padding: 10px;
     border-radius: 8px;
     margin-top: 10px;
-    width: 200px;
+    width: fit-content;
+    min-width: 200px;
 }
 
 .file-box img {
