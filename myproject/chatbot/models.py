@@ -6,8 +6,9 @@ class Chat(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=False)
     updated_at = models.DateTimeField(auto_now=True, null=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
-        return self.title
+        return str(self.title)
 
     class Meta:
         db_table = 'chats'
@@ -26,7 +27,7 @@ class ChatDetail(models.Model):
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-            return f"{self.screen_name} - {self.chat_id}"
+        return f"{self.screen_name} - {self.chat_id}"
 
     class Meta:
-            db_table = 'chat_detail'
+        db_table = 'chat_detail'

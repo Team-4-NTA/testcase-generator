@@ -1,14 +1,19 @@
 # myproject/views.py
-from django.shortcuts import render
-from django.http import JsonResponse,StreamingHttpResponse, HttpResponse
-import openai
+
+import os
+import re
 import json
-from .models import Chat, ChatDetail
-from datetime import date, time
-import openpyxl
-import os, re
-from openpyxl.styles import Alignment
+from datetime import date
+
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+import openai
+import openpyxl
+from openpyxl.styles import Alignment
+
+from .models import Chat, ChatDetail
+
 
 client = openai.OpenAI(api_key="")
 
@@ -53,7 +58,8 @@ def chatgpt_login_testcase(request):
                 {"role": "user", "content": prompt}
             ]
         )
-        if "<!DOCTYPE" in response.choices[0].message.content or "<html>" in response.choices[0].message.content:
+        content = response.choices[0].message.content
+        if "<!DOCTYPE" in content or "<html>" in content:
             print("❌ Lỗi: API trả về HTML thay vì JSON!")
             return JsonResponse({"error": "API returned an invalid response"}, status=500)
         test_case_text = response.choices[0].message.content
@@ -68,7 +74,6 @@ def parse_test_cases(text):
     """
     test_cases = []
     matches = re.split(r'### Test case \d+', text)
-    
     for case in matches[1:]:
         columns = {}
         lines = case.split("\n")
@@ -106,7 +111,8 @@ def parse_test_cases(text):
 def get_chat_list(request, history_id):
     try:
         chats = ChatDetail.objects.filter(chat_id=history_id).values(
-            "id", "screen_name", "requirement", "result", "url_result", "created_at"
+            "id", "screen_name", "requirement", "result", 
+            "url_requirement", "url_result", "created_at"
         )
         return JsonResponse(list(chats), safe=False)
     except Chat.DoesNotExist:

@@ -1,15 +1,21 @@
-from django.shortcuts import render
-from openpyxl import load_workbook
+""" 
+Module xử lý upload file.
+"""
+
+import os
+import json
+from datetime import datetime, date
+
+import openai
+import openpyxl
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse,StreamingHttpResponse, HttpResponse
-import json, re, os
-import openpyxl
+from django.core.files.storage import FileSystemStorage
+from openpyxl import load_workbook
 from openpyxl.styles import Alignment
-from datetime import date, datetime
-import openai
+
 from .models import Chat, ChatDetail
-from datetime import datetime
+from . import views
 
 
 client = openai.OpenAI(api_key="")
@@ -19,7 +25,6 @@ def upload_file(request):
     if request.method == 'POST' and request.FILES.get('file'):
         file = request.FILES['file']
         file_extension = file.name.split('.')[-1].lower()
-
         # Kiểm tra định dạng file
         if file_extension not in ['xlsx']:
             return JsonResponse({'message': 'Vui lòng chọn file Excel (xlsx)!'}, status=400)
@@ -30,6 +35,24 @@ def upload_file(request):
             data = data_api(file)  
         else:
             return JsonResponse({'message': 'Template spec không đúng định dạng'}, status=400)    
+        
+        current_dir = os.path.dirname(__file__)
+        upload_dir = os.path.join(current_dir, "upload")
+
+        # Tạo thư mục nếu chưa tồn tại
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Tạo tên file theo thời gian
+        original_filename = file.name
+        file_path = os.path.join(upload_dir, original_filename)
+
+        # Lưu file vào thư mục `result`
+        fs = FileSystemStorage(location=upload_dir)
+        filename = fs.get_available_name(original_filename)
+
+        # Lưu file vào thư mục result/
+        file_path = fs.save(filename, file)
+
         try:
             if isinstance(data, dict) and "item" in data and data["item"]:
                 result = create_testcase(data)
@@ -37,61 +60,20 @@ def upload_file(request):
                     print("❌ Lỗi: API trả về HTML thay vì JSON!")
                     return JsonResponse({"error": "API returned an invalid response"}, status=500)
                 test_case_text = result.choices[0].message.content
-                json_data = parse_test_cases(test_case_text)
-                save_upload(data.get('screen_name', ''), json_data, request.get('history_id'))
-                return JsonResponse({"screen_name": data.get('screen_name', ''), "test_cases": json_data})
+                json_data = views.parse_test_cases(test_case_text)
+                history_id = request.POST.get('history_id')
+                save_upload(data.get('screen_name', ''), json_data, history_id, file_path)
+                return JsonResponse({"screen_name": data.get('screen_name', ''), "test_cases": json_data, })
             return JsonResponse({'message': 'Không có data trả về'}, status=400)           
         except Exception as e:
            return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'message': 'Không có file nào được tải lên!'}, status=400)
 
-def parse_test_cases(text):
-    """
-    Parse nội dung test case thành danh sách JSON.
-    """
-    test_cases = []
-    matches = re.split(r'### Test case \d+', text)
-    
-    for case in matches[1:]:
-        columns = {}
-        lines = case.split("\n")
-        steps = []
-
-        for line in lines:
-            line = line.strip()
-            if line.startswith("Số thứ tự:"):
-                columns["id"] = line.split(":")[1].strip()
-            elif line.startswith("Độ ưu tiên:"):
-                columns["priority"] = line.split(":")[1].strip()
-            elif line.startswith("Loại:"):
-                columns["type"] = line.split(":")[1].strip()
-            elif line.startswith("Mục tiêu:"):
-                columns["goal"] = line.split(":")[1].strip()
-            elif line.startswith("Dữ liệu kiểm tra:"):
-                columns["test_data"] = line.split(":", 1)[1].strip()
-            elif line.startswith("Điều kiện:"):
-                columns["condition"] = line.split(":")[1].strip()
-            elif line.startswith("Các bước kiểm tra:"):
-                steps = []
-            elif re.match(r'^\d+\.', line):
-                steps.append(line.strip())
-            elif line.startswith("Kết quả mong đợi:"):
-                columns["expected_result"] = line.split(":")[1].strip()
-            elif line.startswith("Ghi chú:"):
-                columns["note"] = line.split(":")[1].strip()
-
-        columns["steps"] = "\n".join(steps)
-        if len(columns) == 9:
-            test_cases.append(columns)
-
-    return json.dumps(test_cases, ensure_ascii=False, indent=2)
-
 def create_testcase(data):
     screen_name = data.get('screen_name', '')
     requirement = data.get('requirement', '')
     item =  data['item']
-  
     prompt = (f"Tạo test case cho màn hình {screen_name}" +
         (f" với yêu cầu '{requirement}'" if requirement else "") +
         f" và gồm những item hiển thị có những điều kiện sau: {item} "
@@ -277,7 +259,7 @@ def write_test_case_to_excel(screen_name, test_cases_json):
                 cell.alignment = Alignment(wrap_text=True)
 
         # Tạo thư mục upload nếu chưa có
-        upload_dir = os.path.join(current_dir, "upload")
+        upload_dir = os.path.join(current_dir, "resutl")
         os.makedirs(upload_dir, exist_ok=True)
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         # Đường dẫn lưu file
@@ -293,31 +275,28 @@ def write_test_case_to_excel(screen_name, test_cases_json):
         return None
 
 @csrf_exempt
-def save_upload(screen_name, data, id):
-    file_path = write_test_case_to_excel(screen_name, data)
-    print(file_path)
-    history_id = id
-    chat_data = data
+def save_upload(screen_name, chat_data, history_id, url):
+    file_path = write_test_case_to_excel(screen_name, chat_data)
     if not chat_data:
         return JsonResponse({"error": "No chats provided."}, status=400)
 
     chat_objects = []
 
     history = None
-    if history_id:
+    if not history_id or history_id.lower() == 'null': 
+        history = Chat.objects.create(title=screen_name)
+    else:
         try:
             history = Chat.objects.get(id=history_id)
-        except Chat.DoesNotExist:
+        except FileNotFoundError:
             return JsonResponse({"error": "History not found."}, status=404)
-    else:
-        history = Chat.objects.create(title=chat_data['screen_name'])
     chat = ChatDetail.objects.create(
-        chat_id=history.id,  
+        chat_id=history,  
         screen_name=screen_name,
         requirement='',
         result='',
         chat_type=2,
-        url_requirement=chat_data.get('url_requirement', ''),
+        url_requirement=url,
         url_result=file_path 
     )
 

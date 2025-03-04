@@ -202,13 +202,15 @@ function displayChats(chats) {
         console.log(chat.id);
         chatIDs.push(chat.id);
         if (chat.url_result !== null && chat.url_result !== "") {
+            const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
+            const url_result = chat.url_result.split("/").pop();
             const msgHTML = `
                 <div class="msg-container">
                     <div class="msg right-msg">
                         <div class="file-box">
                             <img src="static/image/sheets.png" alt="file">
                             <div>
-                                <div class="file-name">hhhhhh</div>
+                                <div class="file-name">${url_requirement}</div>
                                 <div class="file-type">Bảng tính</div>
                             </div>
                         </div>
@@ -219,7 +221,7 @@ function displayChats(chats) {
                         <div class="file-box">
                             <img src="static/image/sheets.png" alt="file">
                             <div>
-                                <div class="file-name">hhhhhh</div>
+                                <div class="file-name">${url_result}</div>
                                 <div class="file-type">Bảng tính</div>
                             </div>
                         </div>
