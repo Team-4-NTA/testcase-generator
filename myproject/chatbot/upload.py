@@ -62,8 +62,8 @@ def upload_file(request):
                 test_case_text = result.choices[0].message.content
                 json_data = views.parse_test_cases(test_case_text)
                 history_id = request.POST.get('history_id')
-                save_upload(data.get('screen_name', ''), json_data, history_id, file_path)
-                return JsonResponse({"screen_name": data.get('screen_name', ''), "test_cases": json_data, })
+                file_name = save_upload(data.get('screen_name', ''), json_data, history_id, file_path)
+                return JsonResponse({"screen_name": data.get('screen_name', ''), "test_cases": json_data, "file_name": file_name})
             return JsonResponse({'message': 'Không có data trả về'}, status=400)           
         except Exception as e:
            return JsonResponse({'error': str(e)}, status=500)
@@ -268,17 +268,17 @@ def write_test_case_to_excel(screen_name, test_cases_json):
 
         workbook.save(file_path)
 
-        return file_path  # Trả về đường dẫn file đã lưu
+        return file_path, file_name  # Trả về đường dẫn file đã lưu
 
     except Exception as e:
         print(f"Error: {str(e)}")
-        return None
+        return None, None
 
 @csrf_exempt
 def save_upload(screen_name, chat_data, history_id, url):
-    file_path = write_test_case_to_excel(screen_name, chat_data)
+    file_path, file_name = write_test_case_to_excel(screen_name, chat_data)
     if not chat_data:
-        return JsonResponse({"error": "No chats provided."}, status=400)
+        raise ValueError("No chats provided.")
 
     chat_objects = []
 
@@ -289,7 +289,7 @@ def save_upload(screen_name, chat_data, history_id, url):
         try:
             history = Chat.objects.get(id=history_id)
         except FileNotFoundError:
-            return JsonResponse({"error": "History not found."}, status=404)
+            raise ValueError("History not found.")
     chat = ChatDetail.objects.create(
         chat_id=history,  
         screen_name=screen_name,
@@ -301,4 +301,4 @@ def save_upload(screen_name, chat_data, history_id, url):
     )
 
     chat_objects.append(chat)
-    return JsonResponse({"success": True, "history_id": history.id})
+    return file_name
