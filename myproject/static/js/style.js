@@ -1,5 +1,5 @@
-const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-let historyId = null;
+window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+window.historyId = null;
 let chatIDs = [];
 
 document.getElementById('toggleSidebar').addEventListener('click', function() {
@@ -49,7 +49,7 @@ async function saveResponse(screen_name, requirement, result) {
                 "X-CSRFToken": csrfToken
             },
             body: JSON.stringify({ 
-                history_id: historyId, // Send historyId if it exists
+                history_id: historyId,
                 chat: chatItem
             })
         });
@@ -96,12 +96,11 @@ async function submitForm() {
 
     loading.classList.remove("d-none");
 
-    const text = `###### Màn hình chức năng: ${screen_name}\n###### Yêu cầu: ${requirement}`;
     let randomId = uuidv4();
     document.getElementById("screen_name").value = "";
     document.getElementById("requirement").value = "";
 
-    appendMessage("user", "right", text, screen_name, randomId);
+    appendMessage("right", requirement, screen_name, randomId);
     try {
         console.log("Data gửi lên:", JSON.stringify({ screen_name, requirement }));
         const response = await fetch("", {
@@ -112,24 +111,21 @@ async function submitForm() {
             },
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
         });
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let done = false;
-        let result = '';
-
-        appendMessage("bot", "left", result, screen_name, randomId);
-        const msgTextDiv = document.getElementById(`${randomId}-bot`);
-        msgTextDiv.setAttribute("data-loading", "true");
         loading.classList.add("d-none");
-        while (!done)    {
-            const { value, done: readerDone } = await reader.read();
-            done = readerDone;
-            result += decoder.decode(value, { stream: true });
-            msgTextDiv.innerText = result;
+        if (response.ok) {
+            const result = await response.json();
+            console.log(result);
+            appendMessage("left", result.test_cases, result.screen_name, randomId);
+            saveResponse(screen_name, requirement, result.test_cases, );
+        } else {
+            if (response.status === 500) {
+                console.error("❌ Lỗi 500: Internal Server Error");
+                appendMessage("left", "Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau.", "System", randomId);
+            } else {
+                console.error(`❌ Lỗi ${response.status}: ${response.statusText}`);
+                appendMessage("left", `Lỗi ${response.status}: ${response.statusText}`, "System", randomId);
+            }
         }
-        msgTextDiv.setAttribute("data-loading", "false");
-        saveResponse(screen_name, requirement, result);
     } catch (error) {
         console.error("Lỗi:", error);
         alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
@@ -200,81 +196,255 @@ function displayChats(chats) {
     const responsesContainer = document.getElementById("responses"); 
 
     responsesContainer.innerHTML = '';
+    console.log(chats);
 
     chats.forEach(chat => {
+        console.log(chat.id);
         chatIDs.push(chat.id);
-        const msgHTML = `
-            <div id="msg-container-${chat.id}" class="msg-container">
-                <div class="msg right-msg">
-                    <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">user</div>
-                            <div class="msg-info-time">${formatDate(chat.created_at)}</div>
+        if (chat.url_result !== null && chat.url_result !== "") {
+            const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
+            const url_result = chat.url_result.split("/").pop();
+            const msgHTML = `
+                <div class="msg-container">
+                    <div class="msg right-msg">
+                        <div class="file-box">
+                            <img src="static/image/sheets.png" alt="file">
+                            <div>
+                                <div class="file-name">${url_requirement}</div>
+                                <div class="file-type">Bảng tính</div>
+                            </div>
                         </div>
-                        <div class="msg-text" id="${chat.id}">###### Màn hình chức năng: ${chat.screen_name}<br>###### Yêu cầu: ${chat.requirement}</div>
                     </div>
                 </div>
-                <div class="msg left-msg">
-                    <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">bot</div>
-                            <div class="msg-info-time">${formatDate(chat.created_at)}</div>
+                <div class="msg-container">
+                    <div class="msg left-msg">
+                        <div class="file-box">
+                            <img src="static/image/sheets.png" alt="file">
+                            <div>
+                                <div class="file-name">${url_result}</div>
+                                <div class="file-type">Bảng tính</div>
+                            </div>
                         </div>
-                        <div class="msg-text" id="${chat.id}-bot"></div>
-                        <button class="btn btn-success mt-2 float-right" onclick="exportExcel('${chat.id}','${chat.screen_name}')">Export Excel</button>
+                    </div>
+                </div>`;
+
+            document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
+        } else {
+            let msgHTML = `
+                <div id="msg-container-${chat.id}" class="msg-container">
+                    ${rigthInnerHTML(chat.created_at, chat.id, chat.requirement, chat.screen_name)}
+                    <div class="msg left-msg">
+                        <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">bot</div>
+                                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
+                            </div>
+                            ${tableInnerHTML(chat.id)}
+                            <div class="d-flex justify-content-end mt-2">
+                                <button class="btn btn-success" onclick="exportExcel('${chat.id}','${chat.screen_name}')">Export Excel</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div> 
-        `;
-        responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
-        const msgTextDiv = document.getElementById(`${chat.id}-bot`);
-        msgTextDiv.innerText = chat.result;
+            `;
+            responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+            const tableBody = document.getElementById(`testcase-body-${chat.id}`);
+
+            let testCases;
+
+            if (typeof chat.result === "string") {``
+                try {
+                    testCases = JSON.parse(chat.result);
+                    console.log("✅ Đã parse JSON thành mảng:", testCases);
+                } catch (error) {
+                    console.error("❌ Lỗi khi parse JSON:", error);
+                    testCases = [];
+                }
+            } else if (Array.isArray(chat.result)) {
+                testCases = chat.result;
+                console.log("✅ Result đã là mảng hợp lệ:", testCases);
+            } else {
+                console.error("❌ Dữ liệu result không hợp lệ:", chat.result);
+                testCases = [];
+            }
+
+            if (testCases.length > 0) {
+                testCases.forEach(row => {
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${row.id}</td>
+                        <td>${row.priority}</td>
+                        <td>${row.type}</td>
+                        <td>${row.goal}</td>
+                        <td>${row.test_data}</td>
+                        <td>${row.condition}</td>
+                        <td>${row.steps}</td>
+                        <td>${row.expected_result}</td>
+                        <td>${row.note}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            } else {
+                console.error("❌ Không có test cases để hiển thị.");
+            }
+        }
         responsesContainer.scrollTop = responsesContainer.scrollHeight;
     });
 }
 
-function appendMessage(name, side, text, screen_name, id) {
+async function appendMessage(side, text, screen_name, id) {
     const responsesContainer = document.getElementById("responses");
-    lastRightId = `msg-container-${id}`;
+    let lastRightId = `msg-container-${id}`;
+    console.log(id);
+
     if (side === "right") {
         msgHTML = `
             <div id="${lastRightId}" class="msg-container">
-                <div class="msg ${side}-msg">
-                    <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">${name}</div>
-                            <div class="msg-info-time">${formatDate(new Date())}</div>
-                        </div>
-                        <div class="msg-text" id="${id}"></div>
-                    </div>
-                </div>
+                ${rigthContentHTML(new Date(), id, text, screen_name)}
             </div> 
         `;
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
-        const msgTextDiv = document.getElementById(id);
-        msgTextDiv.innerText = text;
-    } else {
+    } else if (isValidJSON(text)) {
         const container = document.getElementById(lastRightId);
-        let idText = `${id}`;
+        if (typeof text === "string") {
+            try {
+                text = JSON.parse(text);
+                console.log("✅ JSON đã được parse:", text);
+            } catch (error) {
+                console.error("❌ Lỗi parse JSON:", error);
+            }
+        }      
         if (container) {
             msgHTML = `
-                <div class="msg ${side}-msg">
+                <div class="msg left-msg">
                     <div class="msg-bubble">
                         <div class="msg-info">
-                            <div class="msg-info-name">${name}</div>
-                            <div class="msg-info-time">${formatDate(new Date())}</div>
+                            <div class="msg-info-name">${screen_name}</div>
+                            <div class="msg-info-time">${new Date().toLocaleTimeString()}</div>
                         </div>
-                        <div class="msg-text" id="${id}-bot"></div>
-                        <button class="btn btn-success mt-2 float-right" onclick="exportExcel('${idText}','${screen_name}')">Export Excel</button>
+                        ${tableInnerHTML(id)}
+                        <div class="d-flex justify-content-end mt-2">
+                            <button class="btn btn-success" onclick="exportExcel('${id}','${screen_name}')">Export Excel</button>
+                        </div>
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML("beforeend", msgHTML);
+            const tableBody = document.getElementById(`testcase-body-${id}`);
+
+            let index = 0;
+
+            function addRow() {
+                if (index < text.length) {
+                    const row = text[index];
+
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `<td></td><td></td><td></td><td></td><td></td><td></td><td></td></td><td></td><td></td>`;
+
+                    tableBody.appendChild(tr);
+
+                    const cells = tr.querySelectorAll("td");
+                    const values = [
+                        row.id, row.priority, row.type, row.goal, 
+                        row.test_data, row.condition, row.steps, 
+                        row.expected_result, row.note
+                    ];
+                    cells.forEach((cell, i) => {
+                        typeText(cell, values[i]);
+                    });
+
+                    index++; 
+                    setTimeout(addRow, 1000);
+                }
+            }
+
+            function typeText(element, text, speed = 50) {
+                let i = 0;
+                function typing() {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                        setTimeout(typing, speed);
+                    }
+                }
+                typing();
+            }
+
+            setTimeout(addRow, 1000);     
+        } else {
+            console.error(`Container với id "${lastRightId}" không tìm tiIhấy.`);
+        }
+    } else {
+        const container = document.getElementById(lastRightId);
+        if (container) {
+            msgHTML = `
+                <div class="msg left-msg">
+                    <div class="msg-bubble">
+                        <div class="msg-info">
+                            <div class="msg-info-name">bot</div>
+                            <div class="msg-info-time">${formatDate(new Date())}</div>
+                        </div>
+                        <div class="msg-text" id="${id}-bot"></div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", msgHTML);
+            document.getElementById(`${id}-bot`).innerText = text;
         } else {
             console.error(`Container with id "${lastRightId}" not found for bot message.`);
         }
     }
+
     responsesContainer.scrollTop = responsesContainer.scrollHeight;
+}
+
+function isValidJSON(text) {
+    try {
+        const json = JSON.parse(text);
+        if (typeof json === "object" && json !== null) {
+            return json;
+        }
+    } catch (error) {
+        return false;
+    }
+    return false;
+}
+
+function tableInnerHTML(id) {
+    return `<div class="msg-text">
+        <table class="table table-bordered" style="width: 1600px;">
+            <thead>
+                <tr>
+                    <th>Số thứ tự</th>
+                    <th>Độ ưu tiên</th>
+                    <th>Loại</th>
+                    <th>Mục tiêu</th>
+                    <th>Dữ liệu kiểm tra</th>
+                    <th>Điều kiện</th>
+                    <th>Các bước kiểm tra</th>
+                    <th>Kết quả mong đợi</th>
+                    <th>Ghi chú</th>
+                </tr>
+            </thead>
+            <tbody id="testcase-body-${id}">
+            </tbody>
+        </table>
+    </div>`;
+}
+
+function rigthInnerHTML(created_at, id, requirement, screen_name) {
+    return `<div class="msg right-msg">
+        <div class="msg-bubble">
+            <div class="msg-info">
+                <div class="msg-info-name">user</div>
+                <div class="msg-info-time">${formatDate(created_at)}</div>
+            </div>
+            <div class="msg-text" id="${id}">
+                <strong>Màn hình chức năng:</strong> ${screen_name}<br>
+                <strong>Yêu cầu:</strong> ${requirement}
+            </div>
+        </div>
+    </div>`;
 }
 
 async function deleteHistory(history_id, event) {
@@ -313,7 +483,6 @@ async function exportExcel(id, screen_name) {
         });
 
         if (response.ok) {
-            // Tạo link tải xuống
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");

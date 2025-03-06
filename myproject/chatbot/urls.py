@@ -1,7 +1,10 @@
+""" 
+Module xử lý urls.
+"""
+
 from django.urls import path
-from django.conf import settings
-from django.conf.urls.static import static
 from . import views, upload
+
 urlpatterns = [
     path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
     path('export-excel', views.write_test_case_to_excel, name='write_test_case_to_excel'),
