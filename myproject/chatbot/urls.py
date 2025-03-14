@@ -3,7 +3,7 @@ Module xử lý urls.
 """
 
 from django.urls import path
-from . import views, upload
+from . import views, upload, template
 
 urlpatterns = [
     path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('save-history/', views.save_history, name='save_history'),
     path('delete-history/<int:history_id>/', views.delete_history, name='delete_history'),
     path('upload-template', upload.upload_file, name='upload_file'),
+    path('generate-template', template.generate_template, name='generate_template'),
 ]
