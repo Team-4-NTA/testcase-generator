@@ -27,7 +27,6 @@ def generate_template(request):
             "screen_name": screen_name,
             "test_cases": {
                 "spec_data": spec_data,
-                # "api_data": api_data
             },
             "file_url": str(file_path)
         })
@@ -54,10 +53,10 @@ def generate_spec_data(data):
 def parse_spec_data(response_text):
     """Chuyển đổi bảng markdown từ OpenAI thành danh sách dictionary"""
     lines = response_text.split("\n")
-    
+
     spec_data = []
     table_started = False
-    
+
     for line in lines:
         # Bỏ qua tiêu đề và đường phân cách bảng
         if "| STT |" in line:
@@ -65,7 +64,7 @@ def parse_spec_data(response_text):
             continue
         if table_started and re.match(r"^\|\s*-+\s*\|", line):
             continue
-        
+
         # Nếu bảng đã bắt đầu, xử lý từng dòng
         if table_started and "|" in line:
             columns = [col.strip() for col in line.split("|")[1:-1]]  # Bỏ cột đầu và cuối (do split("|") tạo phần tử rỗng)
@@ -80,11 +79,11 @@ def parse_spec_data(response_text):
                     "Condition/Spec/Event": columns[6],
                     "Data": columns[7]
                 })
-    
+
     return spec_data
 
 def create_excel_file(screen_name, spec_data):
-    """Tạo file Excel từ spec_data và api_data"""
+    """Tạo file Excel từ spec_data"""
     wb = Workbook()
     ws = wb.active
     ws.title = "Spec"
@@ -103,3 +102,51 @@ def create_excel_file(screen_name, spec_data):
     wb.save(file_path)
 
     return file_path
+    try:
+        current_dir = os.path.dirname(__file__)
+        template_file_path = os.path.join(current_dir, "files/format-testcase.xlsx")
+
+        if not os.path.exists(template_file_path):
+            raise FileNotFoundError("Template file not found!")
+
+        workbook = openpyxl.load_workbook(template_file_path)
+        sheet = workbook.active
+
+        # Ghi "Tên màn hình" vào ô đầu tiên
+        sheet["A2"] = screen_name
+        sheet["F2"] = date.today()
+
+        test_cases = json.loads(test_cases_json)  # Chuyển JSON string thành list
+        row = 9
+
+        for case in test_cases:
+            sheet[f"A{row}"] = case.get("id", "")
+            sheet[f"B{row}"] = case.get("priority", "")
+            sheet[f"C{row}"] = case.get("type", "")
+            sheet[f"D{row}"] = case.get("goal", "")
+            sheet[f"E{row}"] = case.get("test_data", "").replace(",", ",\n")
+            sheet[f"F{row}"] = case.get("condition", "")
+            sheet[f"G{row}"] = case.get("steps", "")
+            sheet[f"H{row}"] = case.get("expected_result", "")
+            sheet[f"I{row}"] = case.get("note", "")
+            row += 1
+
+        for row in sheet.iter_rows(min_row=9, max_row=row - 1):
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True)
+
+        # Tạo thư mục upload nếu chưa có
+        upload_dir = os.path.join(current_dir, "resutl")
+        os.makedirs(upload_dir, exist_ok=True)
+        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Đường dẫn lưu file
+        file_name = f"{current_time}_testcase.xlsx"
+        file_path = os.path.join(upload_dir, file_name)
+
+        workbook.save(file_path)
+
+        return file_path, file_name  # Trả về đường dẫn file đã lưu
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return None, None

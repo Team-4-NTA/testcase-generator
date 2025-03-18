@@ -24,12 +24,20 @@ async function createTemplate() {
             },
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
         });
+
         loading.classList.add("d-none");
+
         if (response.ok) {
             const result = await response.json();
-            appendTemplate("left", result.spec_data, result.screen_name, randomId);
-            console.log(result.spec_data);
-            // saveResponse(screen_name, requirement, result.spec_data, );
+            console.log(result);
+
+            const randomId = Date.now();
+
+            // Hiển thị bảng Spec
+            appendTemplate("left", result.test_cases.spec_data, result.screen_name, randomId);
+
+            // 👉 Gọi hàm để điền dữ liệu vào bảng
+            displaySpecData(randomId, result.test_cases.spec_data);
         } else {
             if (response.status === 500) {
                 console.error("❌ Lỗi 500: Internal Server Error");
@@ -47,74 +55,35 @@ async function createTemplate() {
     }
 }
 
-async function appendTemplate(side, text, screen_name, id) {
+async function appendTemplate(side, data, screen_name, id) {
     const responsesContainer = document.getElementById("responses");
     let lastRightId = `msg-container-${id}`;
 
-    if (side === "right") {
-        // Hiển thị tin nhắn người dùng
-        let msgHTML = `
-            <div id="${lastRightId}" class="msg-container">
-                ${rightHTML(new Date(), id, text, screen_name)}
-            </div> 
+    if (side === "left" && data) {
+        const container = document.createElement("div");
+        container.id = lastRightId;
+        container.classList.add("msg-container");
+
+        // Thêm HTML vào container
+        container.innerHTML = `
+            <div class="msg left-msg">
+                <div class="msg-bubble">
+                    <div class="msg-info">
+                        <div class="msg-info-name">${screen_name}</div>
+                        <div class="msg-info-time">${formatDate(new Date())}</div>
+                    </div>
+                    ${tableHTML(id)}
+                    <div class="d-flex justify-content-end mt-2">
+                        <button class="btn btn-success" onclick="exportExcel('${id}','${screen_name}')">Tải Excel</button>
+                    </div>
+                </div>
+            </div>
         `;
-        responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
-    } else if (isValidJSON(text)) {
-        // Kiểm tra JSON và hiển thị bảng
-        const container = document.getElementById(lastRightId);
-        if (typeof text === "string") {
-            try {
-                text = JSON.parse(text);
-                console.log("✅ JSON đã được parse:", text);
-            } catch (error) {
-                console.error("❌ Lỗi parse JSON:", error);
-            }
-        }
 
-        if (container) {
-            let msgHTML = `
-                <div class="msg left-msg">
-                    <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">${screen_name}</div>
-                            <div class="msg-info-time">${new Date().toLocaleTimeString()}</div>
-                        </div>
-                        ${tableHTML(id)}
-                        <div class="d-flex justify-content-end mt-2">
-                            <button class="btn btn-success" onclick="exportExcel('${id}','${screen_name}')">Tải Excel</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML("beforeend", msgHTML);
+        responsesContainer.appendChild(container);
 
-            // Hiển thị dữ liệu bảng Spec
-            displaySpecData(id, text.spec_data);
-            // Hiển thị dữ liệu bảng API
-            displayApiData(id, text.api_data);
-        } else {
-            console.error(`Container với id "${lastRightId}" không tìm thấy.`);
-        }
-    } else {
-        // Hiển thị tin nhắn bot
-        const container = document.getElementById(lastRightId);
-        if (container) {
-            let msgHTML = `
-                <div class="msg left-msg">
-                    <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">bot</div>
-                            <div class="msg-info-time">${formatDate(new Date())}</div>
-                        </div>
-                        <div class="msg-text" id="${id}-bot"></div>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML("beforeend", msgHTML);
-            document.getElementById(`${id}-bot`).innerText = text;
-        } else {
-            console.error(`Container với id "${lastRightId}" không tìm thấy.`);
-        }
+        // Hiển thị dữ liệu Spec
+        displaySpecData(id, data.spec_data || []);
     }
 
     responsesContainer.scrollTop = responsesContainer.scrollHeight;
@@ -135,60 +104,20 @@ function displaySpecData(id, data) {
     const tableBody = document.getElementById(`spec-table-body-${id}`);
     tableBody.innerHTML = "";
 
-    let index = 0;
-    function addRow() {
-        if (index < data.length) {
-            const row = data[index];
-
-            let tr = document.createElement("tr");
-            tr.innerHTML = "<td></td>".repeat(8); // 8 cột
-
-            tableBody.appendChild(tr);
-
-            const cells = tr.querySelectorAll("td");
-            const values = [
-                row["STT"], row["Tên Item"], row["Require"], row["Type"],
-                row["Max"], row["Min"], row["Condition/Spec/Event"], row["Data"]
-            ];
-            cells.forEach((cell, i) => {
-                typeText(cell, values[i]);
-            });
-
-            index++;
-            setTimeout(addRow, 500);
-        }
-    }
-    addRow();
-}
-
-// Hiển thị bảng API
-function displayApiData(id, data) {
-    const tableBody = document.getElementById(`api-table-body-${id}`);
-    tableBody.innerHTML = "";
-
-    let index = 0;
-    function addRow() {
-        if (index < data.length) {
-            const row = data[index];
-
-            let tr = document.createElement("tr");
-            tr.innerHTML = "<td></td>".repeat(5); // 5 cột
-
-            tableBody.appendChild(tr);
-
-            const cells = tr.querySelectorAll("td");
-            const values = [
-                row["Loại"], row["Tên Tham số"], row["Bắt buộc"], row["Mô tả"], row["Mẫu"]
-            ];
-            cells.forEach((cell, i) => {
-                typeText(cell, values[i]);
-            });
-
-            index++;
-            setTimeout(addRow, 500);
-        }
-    }
-    addRow();
+    data.forEach((row) => {
+        let tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${row["STT"] || ""}</td>
+            <td>${row["Tên Item"] || ""}</td>
+            <td>${row["Require"] || ""}</td>
+            <td>${row["Type"] || ""}</td>
+            <td>${row["Max"] || ""}</td>
+            <td>${row["Min"] || ""}</td>
+            <td>${row["Condition/Spec/Event"] || ""}</td>
+            <td>${row["Data"] || ""}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
 }
 
 // Hiệu ứng gõ chữ
@@ -204,7 +133,7 @@ function typeText(element, text, speed = 50) {
     typing();
 }
 
-// Tạo HTML bảng Spec và API
+// Tạo HTML bảng Spec
 function tableHTML(id) {
     return `
     <div class="msg-text">
@@ -223,20 +152,6 @@ function tableHTML(id) {
                 </tr>
             </thead>
             <tbody id="spec-table-body-${id}"></tbody>
-        </table>
-
-        <h5>API Table</h5>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Loại</th>
-                    <th>Tên Tham số</th>
-                    <th>Bắt buộc</th>
-                    <th>Mô tả</th>
-                    <th>Mẫu</th>
-                </tr>
-            </thead>
-            <tbody id="api-table-body-${id}"></tbody>
         </table>
     </div>`;
 }
