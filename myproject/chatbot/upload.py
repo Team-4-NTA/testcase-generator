@@ -364,7 +364,7 @@ def save_upload(screen_names, chat_data, history_id, url):
     file_path, file_name = write_test_case_to_excel(screen_names, chat_data)
     first_screen_name = next(iter(screen_names.values()), "")
     if not chat_data:
-        return JsonResponse({"error": "No chats provided."}, status=400)
+        raise ValueError("No chats provided.")
 
     chat_objects = []
 
@@ -375,7 +375,7 @@ def save_upload(screen_names, chat_data, history_id, url):
         try:
             history = Chat.objects.get(id=history_id)
         except FileNotFoundError:
-            return JsonResponse({"error": "History not found."}, status=404)
+            raise ValueError("History not found.")
     chat = ChatDetail.objects.create(
         chat_id=history,  
         screen_name=first_screen_name,
