@@ -102,7 +102,6 @@ async function submitForm() {
 
     appendMessage("right", requirement, screen_name, randomId);
     try {
-        console.log("Data gửi lên:", JSON.stringify({ screen_name, requirement }));
         const response = await fetch("", {
             method: "POST",
             headers: {
@@ -114,7 +113,6 @@ async function submitForm() {
         loading.classList.add("d-none");
         if (response.ok) {
             const result = await response.json();
-            console.log(result);
             appendMessage("left", result.test_cases, result.screen_name, randomId);
             saveResponse(screen_name, requirement, result.test_cases, );
         } else {
@@ -196,10 +194,8 @@ function displayChats(chats) {
     const responsesContainer = document.getElementById("responses"); 
 
     responsesContainer.innerHTML = '';
-    console.log(chats);
 
     chats.forEach(chat => {
-        console.log(chat.id);
         chatIDs.push(chat.id);
         if (chat.url_result !== null && chat.url_result !== "") {
             const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
@@ -295,12 +291,11 @@ function displayChats(chats) {
 async function appendMessage(side, text, screen_name, id) {
     const responsesContainer = document.getElementById("responses");
     let lastRightId = `msg-container-${id}`;
-    console.log(id);
 
     if (side === "right") {
         msgHTML = `
             <div id="${lastRightId}" class="msg-container">
-                ${rigthContentHTML(new Date(), id, text, screen_name)}
+                ${rigthInnerHTML(new Date(), id, text, screen_name)}
             </div> 
         `;
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);

@@ -38,7 +38,6 @@ async function uploadExcel(file) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('history_id', window.historyId);
-    console.log(window.historyId);
 
     try {
         const response = await fetch("/upload-template", {
@@ -63,7 +62,7 @@ async function uploadExcel(file) {
             alert(errorMessage);
             return;
         }
-        
+
         msgHTML = `
             <div class="msg-container">
                 <div class="msg left-msg">
