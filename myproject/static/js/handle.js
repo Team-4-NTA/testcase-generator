@@ -62,7 +62,7 @@ async function uploadExcel(file) {
             alert(errorMessage);
             return;
         }
-        
+
         msgHTML = `
             <div class="msg-container">
                 <div class="msg left-msg">
