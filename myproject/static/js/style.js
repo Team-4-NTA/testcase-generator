@@ -197,7 +197,33 @@ function displayChats(chats) {
 
     chats.forEach(chat => {
         chatIDs.push(chat.id);
-        if (chat.url_result !== null && chat.url_result !== "") {      
+        if ((chat.url_requirement == null || chat.url_requirement == '') && chat.url_result !== "") {
+            const url_result = chat.url_result.split("/").pop();
+            const msgHTML = `
+                <div class="msg-container">
+                    ${rigthInnerHTML(chat)}
+                </div>
+                <div class="msg-container">
+                    <div class="msg left-msg">
+                        <div class="file-box">
+                            <img src="static/image/sheets.png" alt="file">
+                            <div>
+                                <div class="file-name">${url_result}</div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="file-type">Bảng tính</div>
+                                    <div class="download-link">
+                                       <a href="${chat.url_result}" download>
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
+        } else if (chat.url_requirement !== null && chat.url_requirement !== "" && chat.url_result !== null && chat.url_result !== "") {      
             const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
             const url_result = chat.url_result.split("/").pop();
             const msgHTML = `
@@ -441,16 +467,32 @@ function tableInnerHTML(id) {
     </div>`;
 }
 
-function rigthInnerHTML(created_at, id, requirement, screen_name) {
+function rigthInnerHTML(chat) {
+    if (chat.url_result && !chat.url_requirement) {
+        const type = chat.url_result.includes('_spec') ? 'spec' : 'api';
+        return `<div class="msg right-msg">
+            <div class="msg-bubble">
+                <div class="msg-info">
+                    <div class="msg-info-name">user</div>
+                    <div class="msg-info-time">${formatDate(chat.created_at)}</div>
+                </div>
+                <div class="msg-text" id="${chat.id}">
+                    <strong>Màn hình chức năng:</strong> ${chat.screen_name}<br>
+                    <strong>Yêu cầu:</strong> ${chat.requirement}<br>
+                    <strong>Loại:</strong> ${type}
+                </div>
+            </div>
+        </div>`;
+    }
     return `<div class="msg right-msg">
         <div class="msg-bubble">
             <div class="msg-info">
                 <div class="msg-info-name">user</div>
-                <div class="msg-info-time">${formatDate(created_at)}</div>
+                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
             </div>
-            <div class="msg-text" id="${id}">
-                <strong>Màn hình chức năng:</strong> ${screen_name}<br>
-                <strong>Yêu cầu:</strong> ${requirement}
+            <div class="msg-text" id="${chat.id}">
+                <strong>Màn hình chức năng:</strong> ${chat.screen_name}<br>
+                <strong>Yêu cầu:</strong> ${chat.requirement}
             </div>
         </div>
     </div>`;
