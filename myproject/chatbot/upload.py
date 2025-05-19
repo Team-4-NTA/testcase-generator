@@ -53,7 +53,6 @@ def upload_file(request):
         
         wb = load_workbook(file)
 
-<<<<<<< HEAD
         results = {}
         sheets_data = {}  # Lưu trữ dữ liệu của tất cả các sheet hợp lệ
 
@@ -100,22 +99,6 @@ def upload_file(request):
             "file_path_testcase" : file_path_testcase
             },
             status=200)    
-=======
-        try:
-            if isinstance(data, dict) and "item" in data and data["item"]:
-                result = create_testcase(data)
-                if "<!DOCTYPE" in result.choices[0].message.content or "<html>" in result.choices[0].message.content:
-                    print("❌ Lỗi: API trả về HTML thay vì JSON!")
-                    return JsonResponse({"error": "API returned an invalid response"}, status=500)
-                test_case_text = result.choices[0].message.content
-                json_data = views.parse_test_cases(test_case_text)
-                history_id = request.POST.get('history_id')
-                file_name = save_upload(data.get('screen_name', ''), json_data, history_id, file_path)
-                return JsonResponse({"screen_name": data.get('screen_name', ''), "test_cases": json_data, "file_name": file_name})
-            return JsonResponse({'message': 'Không có data trả về'}, status=400)           
-        except Exception as e:
-           return JsonResponse({'error': str(e)}, status=500)
->>>>>>> 77c13bf (update save logic)
 
     return JsonResponse({'message': 'Không có file nào được tải lên!'}, status=400)
 
@@ -325,7 +308,6 @@ def write_test_case_to_excel(screen_names, test_cases_json):
                 logging.debug(f"JSON decode error: {e}")
                 raise ValueError("Invalid JSON for test_cases_json.")
 
-<<<<<<< HEAD
         # Xác định sheet mẫu (giả sử là sheet đầu tiên)
         template_sheet = workbook.active
         template_sheet_name = template_sheet.title
@@ -382,13 +364,10 @@ def write_test_case_to_excel(screen_names, test_cases_json):
 
         # Lưu file Excel mới
         workbook.save(file_path)
-=======
->>>>>>> 77c13bf (update save logic)
         return file_path, file_name  # Trả về đường dẫn file đã lưu
 
     except Exception as e:
         print(f"Error: {str(e)}")
-<<<<<<< HEAD
         logging.debug(f"Error-1: {str(e)}")
         return None
 
@@ -397,13 +376,6 @@ def save_upload(screen_names, chat_data, history_id, url):
     file_path, file_name = write_test_case_to_excel(screen_names, chat_data)
     file_path = file_path.replace(str(settings.BASE_DIR), "").lstrip("/")
     first_screen_name = next(iter(screen_names.values()), "")
-=======
-        return None, None
-
-@csrf_exempt
-def save_upload(screen_name, chat_data, history_id, url):
-    file_path, file_name = write_test_case_to_excel(screen_name, chat_data)
->>>>>>> 77c13bf (update save logic)
     if not chat_data:
         raise ValueError("No chats provided.")
 
