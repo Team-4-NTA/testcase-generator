@@ -48,6 +48,9 @@ def upload_file(request):
         
         wb = load_workbook(file)
 
+        if len(wb.sheetnames) > 10:
+            return JsonResponse({'message': 'File không được vượt quá 10 sheet!'}, status=400)
+
         results = {}
         sheets_data = {}  # Lưu trữ dữ liệu của tất cả các sheet hợp lệ
 
