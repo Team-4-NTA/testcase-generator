@@ -197,7 +197,7 @@ function displayChats(chats) {
 
     chats.forEach(chat => {
         chatIDs.push(chat.id);
-        if (chat.url_result !== null && chat.url_result !== "") {
+        if (chat.url_result !== null && chat.url_result !== "") {      
             const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
             const url_result = chat.url_result.split("/").pop();
             const msgHTML = `
@@ -207,7 +207,14 @@ function displayChats(chats) {
                             <img src="static/image/sheets.png" alt="file">
                             <div>
                                 <div class="file-name">${url_requirement}</div>
-                                <div class="file-type">Bảng tính</div>
+                                    <div class="d-flex justify-content-between">
+                                        <div class="file-type">Bảng tính</div>
+                                        <div class="download-link">
+                                        <a href="${chat.url_requirement}" download>
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -218,7 +225,14 @@ function displayChats(chats) {
                             <img src="static/image/sheets.png" alt="file">
                             <div>
                                 <div class="file-name">${url_result}</div>
-                                <div class="file-type">Bảng tính</div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="file-type">Bảng tính</div>
+                                    <div class="download-link">
+                                       <a href="${chat.url_result}" download>
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

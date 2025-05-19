@@ -16,7 +16,6 @@ from .models import Chat, ChatDetail
 
 
 client = openai.OpenAI(api_key="")
-
 def chatgpt_login_testcase(request):
     if request.method == "POST":
         # Lấy dữ liệu từ yêu cầu POST
@@ -78,32 +77,36 @@ def parse_test_cases(text):
         columns = {}
         lines = case.split("\n")
         steps = []
+        is_step_section = False
 
         for line in lines:
             line = line.strip()
             if line.startswith("Số thứ tự:"):
-                columns["id"] = line.split(":")[1].strip()
+                columns["id"] = line.split(":", 1)[1].strip()
             elif line.startswith("Độ ưu tiên:"):
-                columns["priority"] = line.split(":")[1].strip()
+                columns["priority"] = line.split(":", 1)[1].strip()
             elif line.startswith("Loại:"):
-                columns["type"] = line.split(":")[1].strip()
+                columns["type"] = line.split(":", 1)[1].strip()
             elif line.startswith("Mục tiêu:"):
-                columns["goal"] = line.split(":")[1].strip()
+                columns["goal"] = line.split(":", 1)[1].strip()
             elif line.startswith("Dữ liệu kiểm tra:"):
                 columns["test_data"] = line.split(":", 1)[1].strip()
             elif line.startswith("Điều kiện:"):
-                columns["condition"] = line.split(":")[1].strip()
+                columns["condition"] = line.split(":", 1)[1].strip()
             elif line.startswith("Các bước kiểm tra:"):
-                steps = []
-            elif re.match(r'^\d+\.', line):
-                steps.append(line.strip())
+                is_step_section = True
             elif line.startswith("Kết quả mong đợi:"):
-                columns["expected_result"] = line.split(":")[1].strip()
+                columns["expected_result"] = line.split(":", 1)[1].strip()
+                is_step_section = False
             elif line.startswith("Ghi chú:"):
-                columns["note"] = line.split(":")[1].strip()
+                columns["note"] = line.split(":", 1)[1].strip()
+            elif is_step_section and re.match(r'^\d+\.', line):
+                steps.append(line)
 
         columns["steps"] = "\n".join(steps)
-        if len(columns) == 9:
+        # Chỉ thêm nếu có dữ liệu cần thiết
+        required_fields = ["id", "priority", "type", "goal", "test_data", "condition", "steps", "expected_result"]
+        if all(field in columns for field in required_fields):
             test_cases.append(columns)
 
     return json.dumps(test_cases, ensure_ascii=False, indent=2)

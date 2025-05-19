@@ -8,17 +8,23 @@ from datetime import datetime, date
 
 import openai
 import openpyxl
+import logging
+import asyncio
+import httpx
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import FileSystemStorage
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Alignment
+from django.conf import settings
 
 from .models import Chat, ChatDetail
 from . import views
 
+api_key=""
 
-client = openai.OpenAI(api_key="")
+# Cấu hình logging (ghi log vào file debug.log)
+logging.basicConfig(filename="debug.log", level=logging.DEBUG, encoding="utf-8")
 
 @csrf_exempt
 def upload_file(request):
@@ -29,8 +35,7 @@ def upload_file(request):
         if file_extension not in ['xlsx']:
             return JsonResponse({'message': 'Vui lòng chọn file Excel (xlsx)!'}, status=400)
         
-        current_dir = os.path.dirname(__file__)
-        upload_dir = os.path.join(current_dir, "upload")
+        upload_dir = os.path.join(settings.BASE_DIR, 'static', 'upload')
 
         # Tạo thư mục nếu chưa tồn tại
         os.makedirs(upload_dir, exist_ok=True)
@@ -44,7 +49,7 @@ def upload_file(request):
         filename = fs.get_available_name(original_filename)
 
         # Lưu file vào thư mục result/
-        file_path = fs.save(filename, file)
+        fs.save(filename, file)
         
         wb = load_workbook(file)
 
@@ -53,7 +58,6 @@ def upload_file(request):
 
         for sheet_name in wb.sheetnames:
             sheet = wb[sheet_name]
-
             try:
                 if validate_file_spec(sheet):
                     data = data_spec(sheet)  # Hàm xử lý dữ liệu Spec
@@ -61,7 +65,6 @@ def upload_file(request):
                     data = data_api(sheet)  # Hàm xử lý dữ liệu API
                 else:
                     continue  # Nếu sheet không hợp lệ, bỏ qua
-
                 results[sheet_name] = data  # Lưu kết quả của sheet vào dictionary
 
                 if isinstance(data, dict) and "item" in data and data["item"]:
@@ -73,7 +76,7 @@ def upload_file(request):
 
         # Gửi toàn bộ dữ liệu trong 1 lần gọi API
         if sheets_data:
-            test_cases = create_testcases_bulk(sheets_data)  # Hàm gửi tất cả sheet lên API một lần
+            test_cases = asyncio.run(generate_testcases_async(sheets_data))
             data_test_case = {}
             screen_names = {}
             for sheet_name, result in test_cases.items():
@@ -83,87 +86,103 @@ def upload_file(request):
 
                 data_test_case[sheet_name] = views.parse_test_cases(result)
                 screen_names[sheet_name] = sheets_data[sheet_name].get('screen_name', '')
-        # return JsonResponse({"test-case": data_test_case}, status=200) 
+
         history_id = request.POST.get('history_id')
+        file_path_requiment = file_path.replace(str(settings.BASE_DIR), "").lstrip("/")
+        file_name, file_path_testcase = save_upload(screen_names, data_test_case, history_id, file_path_requiment)
 
-        file_name = save_upload(screen_names, data_test_case, history_id, file_path)
-
-        # return JsonResponse({"test-case": test_cases}, status=200)
-        # return JsonResponse({
-        #     "message": "Xử lý hoàn tất",
-        #     "processed_file": original_filename,
-        #     "results": results
-        # })
         return JsonResponse({
             "screen_name": next(iter(screen_names.values()), ""),
             "test_cases": test_cases,
-            "file_name": file_name},
+            "file_name": file_name,
+            "file_path_requiment" : file_path_requiment,
+            "file_path_testcase" : file_path_testcase
+            },
             status=200)    
 
     return JsonResponse({'message': 'Không có file nào được tải lên!'}, status=400)
 
-def create_testcases_bulk(data_dict):
-    prompts = []
-    
-    for sheet_name, data in data_dict.items():
-        screen_name = data.get('screen_name', '')
-        requirement = data.get('requirement', '')
-        item = data['item']
-        prompt = (f"Tạo test case cho màn hình {screen_name}" +
-        (f" với yêu cầu '{requirement}'" if requirement else "") +
-            f" và gồm những item hiển thị có những điều kiện sau: {item} "
-            "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
-            "Số thứ tự: <số thứ tự>\n"
-            "Độ ưu tiên: <độ ưu tiên của test case>\n"
-            "Loại: <loại test case>\n"
-            "Mục tiêu: <mục tiêu test case>\n"
-            "Dữ liệu kiểm tra: <dữ liệu để test>\n"
-            "Điều kiện: <điều kiện để test>\n"
-            "Các bước kiểm tra: <các bước để test>\n"
-            "Kết quả mong đợi: <kết quả mong đợt>\n"
-            "Ghi chú: <ghi chú>\n\n"
-            "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
-            "### Test case 1\n"
-            "Số thứ tự: 1\n"
-            "Độ ưu tiên: Cao\n"
-            "Loại: Kiểm thử chức năng\n"
-            "Mục tiêu: Đăng nhập thành công với thông tin hợp lệ\n"
-            "Dữ liệu kiểm tra: Tên người dùng: 'user123', Mật khẩu: 'password123'\n"
-            "Điều kiện: Người dùng đã có tài khoản hợp lệ\n"
-            "Các bước kiểm tra:\n"
-            "    1. Nhập 'user123' vào trường Tên người dùng.\n"
-            "    2. Nhập 'password123' vào trường Mật khẩu.\n"
-            "    3. Nhấn nút 'Đăng nhập'.\n"
-            "Kết quả mong đợi: đăng nhập thành công\n"
-            "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
-            "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
-        )
-        prompts.append({"role": "user", "content": prompt})
+# Hàm tạo prompt cho từng sheet
+def build_prompt_for_sheet(sheet_name, data):
+    screen_name = data.get('screen_name', '')
+    requirement = data.get('requirement', '')
+    item = data['item']
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini-2024-07-18", #gpt-3.5-turbo
-        messages=prompts,
-        n=len(prompts)
+    prompt = (
+        f"Tôi có màn hình sau, hãy viết ÍT NHẤT 10 test case theo định dạng chuẩn:\n\n"
+        f"Sheet: {sheet_name}\n"
+        f"Màn hình: {screen_name}\n"
+        f"Yêu cầu: {requirement}\n"
+        f"Item hiển thị và điều kiện: {item}\n\n"
+        "Hãy viết theo format sau:\n"
+        "### Test case <số thứ tự>\n"
+        "Số thứ tự: <số thứ tự>\n"
+        "Độ ưu tiên: <độ ưu tiên của test case>\n"
+        "Loại: <loại test case>\n"
+        "Mục tiêu: <mục tiêu test case>\n"
+        "Dữ liệu kiểm tra: <dữ liệu để test>\n"
+        "Điều kiện: <điều kiện để test>\n"
+        "Các bước kiểm tra: <các bước để test>\n"
+        "Kết quả mong đợi: <kết quả mong đợt>\n"
+        "Ghi chú: <ghi chú>\n\n"
+        "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
+        "### Test case 1\n"
+        "Số thứ tự: 1\n"
+        "Độ ưu tiên: Cao\n"
+        "Loại: Kiểm thử chức năng\n"
+        "Mục tiêu: Đăng nhập thành công với thông tin hợp lệ\n"
+        "Dữ liệu kiểm tra: Tên người dùng: 'user123', Mật khẩu: 'password123'\n"
+        "Điều kiện: Người dùng đã có tài khoản hợp lệ\n"
+        "Các bước kiểm tra:\n"
+        "    1. Nhập 'user123' vào trường Tên người dùng.\n"
+        "    2. Nhập 'password123' vào trường Mật khẩu.\n"
+        "    3. Nhấn nút 'Đăng nhập'.\n"
+        "Kết quả mong đợi: đăng nhập thành công\n"
+        "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
     )
+    return prompt
 
-    if not response.choices:
-        raise ValueError("❌ API không trả về bất kỳ phản hồi nào!")
+# Hàm gọi OpenAI API bất đồng bộ dùng httpx
+async def call_openai_api_async(prompt, retries=3, delay=3):
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    json_data = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    for attempt in range(retries):
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+                response = await client.post(url, headers=headers, json=json_data)
+                response.raise_for_status()
+                data = response.json()
+                return data['choices'][0]['message']['content']
+        except (httpx.HTTPError, httpx.ReadTimeout) as e:
+            logging.debug(f"Attempt {attempt+1} failed: {e}")    
+            if attempt < retries - 1:
+                await asyncio.sleep(delay)
+            else:
+                raise e
 
+# Hàm chạy song song nhiều prompt bất đồng bộ
+async def generate_testcases_async(data_dict, max_concurrency=5):
+    semaphore = asyncio.Semaphore(max_concurrency)
     results = {}
-    for i, sheet_name in enumerate(data_dict.keys()):
-        if i >= len(response.choices):
-            print(f"⚠️ Cảnh báo: Không có phản hồi cho sheet {sheet_name}, có thể API bị giới hạn!")
-            results[sheet_name] = "Không có dữ liệu từ API"
-            continue
-        
-        result_text = response.choices[i].message.content
-        if "<!DOCTYPE" in result_text or "<html>" in result_text:
-            print(f"❌ Lỗi: API trả về HTML thay vì JSON ở sheet {sheet_name}!")
-            results[sheet_name] = "Lỗi: API trả về HTML"
-            continue
 
-        results[sheet_name] = result_text
+    async def sem_task(sheet_name, data):
+        prompt = build_prompt_for_sheet(sheet_name, data)
+        async with semaphore:
+            try:
+                result = await call_openai_api_async(prompt)
+            except Exception as e:
+                result = f"Error: {str(e)}"
+            results[sheet_name] = result
 
+    tasks = [sem_task(sheet_name, data) for sheet_name, data in data_dict.items()]
+    await asyncio.gather(*tasks)
     return results
 
 # check validate file spec
@@ -186,19 +205,19 @@ def validate_file_spec(sheet):
 def validate_file_api(sheet):
     api_name = "Tên API"
     expected_api_name = sheet["A1"].value
-    
     if api_name != expected_api_name:
         return False
     
     expected_headers = ["Loại", "Tên Tham số", "Bắt buộc", "Mô tả", "Mẫu"]
     actual_headers = []
-    
-    for i in range(1, len(expected_headers) + 1):
+    column_count = sheet.max_column
+    for i in range(1, column_count + 1):
         cell_value = sheet.cell(row=9, column=i).value
-        if cell_value is None:
-            cell_value = sheet.cell(row=8, column=i).value
         actual_headers.append(cell_value.strip() if cell_value else None)
-    
+
+    # Loại bỏ các phần tử None trong actual_headers
+    actual_headers = [header for header in actual_headers if header is not None]
+
     return actual_headers == expected_headers
 
 
@@ -265,10 +284,6 @@ def data_api(sheet):
     data["item"] = item
     return data
 
-import logging
-
-# Cấu hình logging (ghi log vào file debug.log)
-logging.basicConfig(filename="debug.log", level=logging.DEBUG, encoding="utf-8")
 
 def write_test_case_to_excel(screen_names, test_cases_json):
     try:
@@ -279,7 +294,7 @@ def write_test_case_to_excel(screen_names, test_cases_json):
             raise FileNotFoundError("Template file not found!")
 
         workbook = openpyxl.load_workbook(template_file_path)
-        upload_dir = os.path.join(current_dir, "result")
+        upload_dir = os.path.join(settings.BASE_DIR, 'static', 'result')
         os.makedirs(upload_dir, exist_ok=True)
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"{current_time}_testcase.xlsx"
@@ -318,9 +333,6 @@ def write_test_case_to_excel(screen_names, test_cases_json):
             # Ghi "Tên màn hình" vào ô A2 và ngày hiện tại vào ô F2
             sheet["A2"] = screen_names.get(sheet_name, f"Unnamed_{sheet_name}")
             sheet["F2"] = date.today()
-
-            logging.debug(f"Sheet: {sheet_name} | test_cases type: {type(test_cases)}")
-            logging.debug(f"Sheet: {sheet_name} | test_cases content: {test_cases}")
 
             row = 9
             for case in test_cases:
@@ -362,6 +374,7 @@ def write_test_case_to_excel(screen_names, test_cases_json):
 @csrf_exempt
 def save_upload(screen_names, chat_data, history_id, url):
     file_path, file_name = write_test_case_to_excel(screen_names, chat_data)
+    file_path = file_path.replace(str(settings.BASE_DIR), "").lstrip("/")
     first_screen_name = next(iter(screen_names.values()), "")
     if not chat_data:
         raise ValueError("No chats provided.")
@@ -387,4 +400,4 @@ def save_upload(screen_names, chat_data, history_id, url):
     )
 
     chat_objects.append(chat)
-    return file_name
+    return file_name, file_path
