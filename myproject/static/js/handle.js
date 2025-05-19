@@ -13,15 +13,16 @@ function handleFileChange(input) {
             alert('Vui lòng chọn file Excel (xlsx, xls)!');
             return;
         }
-
         const msgHTML = `
             <div class="msg-container">
                 <div class="msg right-msg">
                     <div class="file-box">
                         <img src="static/image/sheets.png" alt="file">
                         <div>
-                            <div class="file-name">${fileName}</div>
-                            <div class="file-type">Bảng tính</div>
+                            <div class="file-name">${fileName}</div>                 
+                            <div class="d-flex justify-content-between download-requiment">
+                                <div class="file-type">Bảng tính</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -62,7 +63,14 @@ async function uploadExcel(file) {
             alert(errorMessage);
             return;
         }
-
+        const downloadRequiment = document.querySelector('.download-requiment');
+        downloadRequiment.insertAdjacentHTML('beforeend', `
+            <div class="download-link">
+                <a href="${result.file_path_requiment}" download>
+                    <i class="fas fa-download"></i> Download
+                </a>
+            </div>
+        `);    
         msgHTML = `
             <div class="msg-container">
                 <div class="msg left-msg">
@@ -70,7 +78,14 @@ async function uploadExcel(file) {
                         <img src="static/image/sheets.png" alt="file">
                         <div>
                             <div class="file-name">${result.file_name}</div>
-                            <div class="file-type">Bảng tính</div>
+                            <div class="d-flex justify-content-between">
+                                <div class="file-type">Bảng tính</div>
+                                <div class="download-link">
+                                    <a href="${result.file_path_testcase}" download>
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
