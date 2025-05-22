@@ -10,7 +10,7 @@ from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, Border, Side
 
 from .models import Chat, ChatDetail
 
@@ -168,6 +168,10 @@ def create_excel_file_spec(screen_name: str, requirement: str, spec_data: list, 
             ]
             for col, value in enumerate(row, start=1):
                 ws.cell(row=start_row + i, column=col, value=value)
+                if col == 1:
+                    cell_request = ws.cell(row=start_row + i, column=1)
+                    cell_request.alignment = Alignment(horizontal='center', vertical='center')
+        apply_border(ws, start_row, start_row + len(spec_data) - 1, start_col=1, end_col=8)
 
         wb.save(output_path)
         
@@ -322,7 +326,21 @@ def write_params(sheet, params: list, start_row: int) -> int:
         sheet.cell(row=i, column=4).value = param.get("Bắt buộc")
         sheet.cell(row=i, column=5).value = param.get("Chi tiết")
         sheet.cell(row=i, column=6).value = param.get("Mẫu dữ liệu")
+    apply_border(sheet, start_row, start_row + len(params) - 1, start_col=1, end_col=6)
     return start_row + len(params) - 1 
+
+thin_border = Border(
+    left=Side(style='thin'),
+    right=Side(style='thin'),
+    top=Side(style='thin'),
+    bottom=Side(style='thin')
+)
+
+def apply_border(sheet, start_row, end_row, start_col, end_col):
+    for row in sheet.iter_rows(min_row=start_row, max_row=end_row,
+                               min_col=start_col, max_col=end_col):
+        for cell in row:
+            cell.border = thin_border
 
 def create_excel_file_api(screen_name: str, api_data: dict):
     file_name, output_path = copy_file("api")
