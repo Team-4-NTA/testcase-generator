@@ -10,12 +10,11 @@ from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, Border, Side
 
 from .models import Chat, ChatDetail
 
 client = openai.OpenAI(api_key="")
-
 # Đường dẫn thư mục lưu file
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
@@ -32,7 +31,7 @@ def generate_template(request):
         template_data = generate_spec_data(data)
         file_path, file_name = create_excel_file_spec(screen_name, requirement, template_data)
     elif type == "api":
-        template_data, data_response = generate_api_data(data)
+        template_data = generate_api_data(data)
         file_path, file_name = create_excel_file_api(screen_name, template_data)
     else:
         return JsonResponse({
@@ -51,8 +50,29 @@ def generate_spec_data(data):
     screen_name = data.get('screen_name', '')
     requirement = data.get('requirement', '')
     prompt = (
-        f"Dựa vào màn hình {screen_name} và yêu cầu: {requirement}, tạo danh sách thông số cần có:\n"
-        "- STT\n- Tên Item\n- Require\n- Type\n- Max\n- Min\n- Condition/Spec/Event\n- Data"
+        f"""
+        Bạn là một chuyên gia phân tích nghiệp vụ.
+
+        Cho một màn hình với:
+        - Tên màn hình: "{screen_name}"
+        - Yêu cầu chức năng: "{requirement}"
+
+        Hãy phân tích và suy luận:
+        1. Các thành phần dữ liệu (các cột hoặc thông tin) có thể hiển thị trên màn hình này.
+        2. Các chức năng hoặc thao tác cần có dựa vào yêu cầu (như tìm kiếm, lọc, sắp xếp, phân trang, nhấn để xem chi tiết, tạo mới, xóa...).
+
+        Sau đó, hãy tạo một bảng thông số kỹ thuật (spec) với định dạng sau:
+
+        | STT | Tên Item               | Require | Type     | Max | Min | Condition/Spec/Event           | Data                     |
+        |-----|------------------------|---------|----------|-----|-----|--------------------------------|--------------------------|
+
+        **Yêu cầu:**
+        - "Tên Item" có thể là một dữ liệu hiển thị (VD: Họ tên, Email...) hoặc một tính năng (VD: Search, Filter).
+        - Với mỗi item, xác định rõ kiểu dữ liệu (Type), có bắt buộc không (Require), các điều kiện áp dụng nếu có (Spec), và ví dụ (Data).
+        - Tự động phân tích từ nội dung màn hình và yêu cầu, không cần liệt kê sẵn.
+
+        Chỉ xuất ra bảng kết quả.
+        """
     )
 
     response = client.chat.completions.create(
@@ -148,6 +168,10 @@ def create_excel_file_spec(screen_name: str, requirement: str, spec_data: list, 
             ]
             for col, value in enumerate(row, start=1):
                 ws.cell(row=start_row + i, column=col, value=value)
+                if col == 1:
+                    cell_request = ws.cell(row=start_row + i, column=1)
+                    cell_request.alignment = Alignment(horizontal='center', vertical='center')
+        apply_border(ws, start_row, start_row + len(spec_data) - 1, start_col=1, end_col=8)
 
         wb.save(output_path)
         
@@ -302,7 +326,21 @@ def write_params(sheet, params: list, start_row: int) -> int:
         sheet.cell(row=i, column=4).value = param.get("Bắt buộc")
         sheet.cell(row=i, column=5).value = param.get("Chi tiết")
         sheet.cell(row=i, column=6).value = param.get("Mẫu dữ liệu")
+    apply_border(sheet, start_row, start_row + len(params) - 1, start_col=1, end_col=6)
     return start_row + len(params) - 1 
+
+thin_border = Border(
+    left=Side(style='thin'),
+    right=Side(style='thin'),
+    top=Side(style='thin'),
+    bottom=Side(style='thin')
+)
+
+def apply_border(sheet, start_row, end_row, start_col, end_col):
+    for row in sheet.iter_rows(min_row=start_row, max_row=end_row,
+                               min_col=start_col, max_col=end_col):
+        for cell in row:
+            cell.border = thin_border
 
 def create_excel_file_api(screen_name: str, api_data: dict):
     file_name, output_path = copy_file("api")
