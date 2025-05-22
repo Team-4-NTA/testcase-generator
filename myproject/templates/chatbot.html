@@ -59,7 +59,7 @@
                 </div>
               </div>
               <div class="d-flex flex-column">
-                <button class="btn btn-secondary mb-2">TEMPLATE</button>
+                <button class="btn btn-secondary mb-2" onclick="createTemplate()">TEMPLATE</button>
                 <button class="btn btn-secondary mb-2" onclick="submitForm()">SEND</button>
                 <button class="btn btn-secondary" onclick="triggerFileInput()">UPLOAD</button>
                 <input type="file" id="fileInput" style="display: none;" onchange="handleFileChange(this)">
@@ -80,4 +80,5 @@
 {% load static %}
 <script src="{% static 'js/style.js' %}"></script>
 <script src="{% static 'js/handle.js' %}"></script>
+<script src="{% static 'js/template.js' %}"></script>
 {% endblock %}
