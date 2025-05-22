@@ -15,7 +15,6 @@ from openpyxl.styles import Alignment
 from .models import Chat, ChatDetail
 
 client = openai.OpenAI(api_key="")
-
 # Đường dẫn thư mục lưu file
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
@@ -32,7 +31,7 @@ def generate_template(request):
         template_data = generate_spec_data(data)
         file_path, file_name = create_excel_file_spec(screen_name, requirement, template_data)
     elif type == "api":
-        template_data, data_response = generate_api_data(data)
+        template_data = generate_api_data(data)
         file_path, file_name = create_excel_file_api(screen_name, template_data)
     else:
         return JsonResponse({
@@ -51,8 +50,29 @@ def generate_spec_data(data):
     screen_name = data.get('screen_name', '')
     requirement = data.get('requirement', '')
     prompt = (
-        f"Dựa vào màn hình {screen_name} và yêu cầu: {requirement}, tạo danh sách thông số cần có:\n"
-        "- STT\n- Tên Item\n- Require\n- Type\n- Max\n- Min\n- Condition/Spec/Event\n- Data"
+        f"""
+        Bạn là một chuyên gia phân tích nghiệp vụ.
+
+        Cho một màn hình với:
+        - Tên màn hình: "{screen_name}"
+        - Yêu cầu chức năng: "{requirement}"
+
+        Hãy phân tích và suy luận:
+        1. Các thành phần dữ liệu (các cột hoặc thông tin) có thể hiển thị trên màn hình này.
+        2. Các chức năng hoặc thao tác cần có dựa vào yêu cầu (như tìm kiếm, lọc, sắp xếp, phân trang, nhấn để xem chi tiết, tạo mới, xóa...).
+
+        Sau đó, hãy tạo một bảng thông số kỹ thuật (spec) với định dạng sau:
+
+        | STT | Tên Item               | Require | Type     | Max | Min | Condition/Spec/Event           | Data                     |
+        |-----|------------------------|---------|----------|-----|-----|--------------------------------|--------------------------|
+
+        **Yêu cầu:**
+        - "Tên Item" có thể là một dữ liệu hiển thị (VD: Họ tên, Email...) hoặc một tính năng (VD: Search, Filter).
+        - Với mỗi item, xác định rõ kiểu dữ liệu (Type), có bắt buộc không (Require), các điều kiện áp dụng nếu có (Spec), và ví dụ (Data).
+        - Tự động phân tích từ nội dung màn hình và yêu cầu, không cần liệt kê sẵn.
+
+        Chỉ xuất ra bảng kết quả.
+        """
     )
 
     response = client.chat.completions.create(
