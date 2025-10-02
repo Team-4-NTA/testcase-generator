@@ -1,28 +1,23 @@
-# create_testcase_ai
-project tạo tự động test case
+# CREATE TESTCASE AI
 
-1. git clone https://github.com/CaoHien2k/create_testcase_ai.git
+Dự án tự động tạo test case bằng AI. Mục tiêu là hỗ trợ lập trình viên và QA nhanh chóng sinh ra bộ test case phù hợp với yêu cầu đầu vào.
 
-2. pip install django
-   
-4. cd myproject/
-   
-5. python manage.py runserver 8888
+## Clone Project
 
-6. pip install mysql-connector-python
+- HTTP: `https://github.com/Team-4-NTA/testcase-generator.git`
 
-7. python manage.py makemigrations
+- SSH: `git@github.com:Team-4-NTA/testcase-generator.git`
 
-8. python manage.py migrate
+## Yêu cầu hệ thống
 
-9. pip install python-dotenv
+- Docker & Docker Compose
 
-//build lại docker
-10. docker build -t my-django-  app .
+## Project Setup
 
-//check version pylint đã có chưa
-11. docker run --rm my-django-app pylint --version
-
-//check lỗi code trong file
-12. pylint <tên_file>
- 
+```sh
+cd testcase-generator
+docker-compose build --no-cache
+docker-compose up -d
+docker exec -it django_app /bin/bash
+python manage.py migrate
+```
