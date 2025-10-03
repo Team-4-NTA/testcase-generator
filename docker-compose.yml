@@ -9,7 +9,7 @@ services:
     volumes:
       - ./myproject:/app
     ports:
-      - "80:8888"
+      - "8888:8888"
     depends_on:
       - db
     environment:
@@ -35,7 +35,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: ai-attendance
+    container_name: django_app_nginx
     ports:
       - "80:80"
       - "443:443"
