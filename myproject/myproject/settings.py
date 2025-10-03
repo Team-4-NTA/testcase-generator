@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-fonms5mv!uh1t*-eulg_g^mnjknae!qje-$zp!-y5s&q2)uulq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['3.114.245.244', 'generation.nitrotech.asia']
 
 
 # Application definition
@@ -75,7 +75,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'create_testcase_ai',
-        'HOST': 'db',
+        'HOST': 'mysql_db',
         'USER': 'create_testcase_ai',
         'PASSWORD': 'Asdf1234#',
         'PORT': '3306',
