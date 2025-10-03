@@ -83,6 +83,10 @@ services:
       - nginx
     networks:
       - app-network
-      
+
 volumes:
   mysql_data:
+
+networks:
+  app-network:
+    driver: bridge
