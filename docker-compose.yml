@@ -18,6 +18,8 @@ services:
       DATABASE_PASSWORD: Asdf1234#
       DATABASE_HOST: 127.0.0.1
       DATABASE_PORT: 3306
+    networks:
+      - app-network
 
   db:
     image: mysql:8.0
@@ -32,6 +34,8 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
 
   nginx:
     image: nginx:alpine
