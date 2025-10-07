@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 import openai
 import openpyxl
 from openpyxl.styles import Alignment
+from openai import AuthenticationError, BadRequestError, RateLimitError, APIError, APIConnectionError
 
 from .models import Chat, ChatDetail
 from dotenv import load_dotenv
@@ -20,52 +21,63 @@ load_dotenv()
 client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 def chatgpt_login_testcase(request):
     if request.method == "POST":
-        # Lấy dữ liệu từ yêu cầu POST
-        data = json.loads(request.body)
-        screen_name = data.get('screen_name', '')
-        requirement = data.get('requirement', '')
+        try:
+            # Lấy dữ liệu từ yêu cầu POST
+            data = json.loads(request.body)
+            screen_name = data.get('screen_name', '')
+            requirement = data.get('requirement', '')
 
-        prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}'. "
-          "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
-          "Số thứ tự: <số thứ tự>\n"
-          "Độ ưu tiên: <độ ưu tiên của test case>\n"
-          "Loại: <loại test case>\n"
-          "Mục tiêu: <mục tiêu test case>\n"
-          "Dữ liệu kiểm tra: <dữ liệu để test>\n"
-          "Điều kiện: <điều kiện để test>\n"
-          "Các bước kiểm tra: <các bước để test>\n"
-          "Kết quả mong đợi: <kết quả mong đợt>\n"
-          "Ghi chú: <ghi chú>\n\n"
-          "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
-          "### Test case 1\n"
-          "Số thứ tự: 1\n"
-          "Độ ưu tiên: Cao\n"
-          "Loại: Kiểm thử chức năng\n"
-          "Mục tiêu: Đăng nhập thành công với thông tin hợp lệ\n"
-          "Dữ liệu kiểm tra: Tên người dùng: 'user123', Mật khẩu: 'password123'\n"
-          "Điều kiện: Người dùng đã có tài khoản hợp lệ\n"
-          "Các bước kiểm tra:\n"
-          "    1. Nhập 'user123' vào trường Tên người dùng.\n"
-          "    2. Nhập 'password123' vào trường Mật khẩu.\n"
-          "    3. Nhấn nút 'Đăng nhập'.\n"
-          "Kết quả mong đợi: đăng nhập thành công"
-          "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
-          "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
-        )
+            prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}'. "
+            "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
+            "Số thứ tự: <số thứ tự>\n"
+            "Độ ưu tiên: <độ ưu tiên của test case>\n"
+            "Loại: <loại test case>\n"
+            "Mục tiêu: <mục tiêu test case>\n"
+            "Dữ liệu kiểm tra: <dữ liệu để test>\n"
+            "Điều kiện: <điều kiện để test>\n"
+            "Các bước kiểm tra: <các bước để test>\n"
+            "Kết quả mong đợi: <kết quả mong đợt>\n"
+            "Ghi chú: <ghi chú>\n\n"
+            "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
+            "### Test case 1\n"
+            "Số thứ tự: 1\n"
+            "Độ ưu tiên: Cao\n"
+            "Loại: Kiểm thử chức năng\n"
+            "Mục tiêu: Đăng nhập thành công với thông tin hợp lệ\n"
+            "Dữ liệu kiểm tra: Tên người dùng: 'user123', Mật khẩu: 'password123'\n"
+            "Điều kiện: Người dùng đã có tài khoản hợp lệ\n"
+            "Các bước kiểm tra:\n"
+            "    1. Nhập 'user123' vào trường Tên người dùng.\n"
+            "    2. Nhập 'password123' vào trường Mật khẩu.\n"
+            "    3. Nhấn nút 'Đăng nhập'.\n"
+            "Kết quả mong đợi: đăng nhập thành công"
+            "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
+            "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
+            )
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
-        content = response.choices[0].message.content
-        if "<!DOCTYPE" in content or "<html>" in content:
-            print("❌ Lỗi: API trả về HTML thay vì JSON!")
-            return JsonResponse({"error": "API returned an invalid response"}, status=500)
-        test_case_text = response.choices[0].message.content
-        test_cases = parse_test_cases(test_case_text)
-        return JsonResponse({"screen_name": screen_name, "test_cases": test_cases})
+            response = client.chat.completions.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            content = response.choices[0].message.content
+            if "<!DOCTYPE" in content or "<html>" in content:
+                return JsonResponse({"error": "API returned invalid response"}, status=502)
+
+            test_cases = parse_test_cases(content)
+            return JsonResponse({"screen_name": screen_name, "test_cases": test_cases})
+
+        except AuthenticationError:
+            return JsonResponse({"error": "Sai API key hoặc chưa cấu hình."}, status=401)
+        except BadRequestError as e:
+            return JsonResponse({"error": f"Yêu cầu không hợp lệ: {str(e)}"}, status=400)
+        except RateLimitError:
+            return JsonResponse({"error": "Vượt quá giới hạn sử dụng API."}, status=429)
+        except (APIError, APIConnectionError) as e:
+            return JsonResponse({"error": f"Lỗi hệ thống OpenAI: {str(e)}"}, status=503)
+        except Exception as e:
+            return JsonResponse({"error": f"Lỗi hệ thống: {str(e)}"}, status=500)
 
     return render(request, "chatbot.html")
 
@@ -116,7 +128,7 @@ def parse_test_cases(text):
 def get_chat_list(request, history_id):
     try:
         chats = ChatDetail.objects.filter(chat_id=history_id).values(
-            "id", "screen_name", "requirement", "result", 
+            "id", "screen_name", "requirement", "result", "chat_type", 
             "url_requirement", "url_result", "created_at"
         )
         return JsonResponse(list(chats), safe=False)

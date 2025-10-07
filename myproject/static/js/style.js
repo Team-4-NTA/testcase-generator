@@ -2,38 +2,6 @@ window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribut
 window.historyId = null;
 let chatIDs = [];
 
-document.getElementById('toggleSidebar').addEventListener('click', function() {
-    var sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('collapsed');
-    var mainContent = document.querySelector('main');
-    if (sidebar.classList.contains('collapsed')) {
-        mainContent.style.width = '100%';
-    } else {
-        if (window.innerWidth > 1200) { 
-            mainContent.style.width = '80%';
-        } else {
-            mainContent.style.width = '70%';
-        } 
-    }
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-    const textarea = document.getElementById("requirement");
-
-    textarea.addEventListener("input", function() {
-        this.style.height = "auto"; // Reset height trước khi đo
-        this.style.height = this.scrollHeight + "px"; // Cập nhật chiều cao theo nội dung
-    });
-});
-
-function toggleCheckbox(selected) {
-    document.querySelectorAll('.checkbox-group input[type="checkbox"]').forEach(checkbox => {
-        if (checkbox !== selected) {
-            checkbox.checked = false;
-        }
-    });
-}
-
 async function saveResponse(screen_name, requirement, result) {
     const chatItem = {
         screen_name: screen_name.trim(),
@@ -65,7 +33,7 @@ async function saveResponse(screen_name, requirement, result) {
         console.error("Lỗi khi lưu:", error);
         alert("Có lỗi xảy ra trong quá trình lưu dữ liệu.");
     } finally {
-        loading.classList.add("d-none");
+        // loading.classList.add("d-none");
     }
 }
 
@@ -84,17 +52,18 @@ function uuidv4() {
     });
 }
 
-async function submitForm() {
+async function submitForm(event) {
+    event.preventDefault();
     const screen_name = document.getElementById("screen_name").value;
     const requirement = document.getElementById("requirement").value;
-    const loading = document.getElementById("loading");
+    // const loading = document.getElementById("loading");
 
     if (!screen_name || !requirement) {
         alert("Vui lòng nhập đầy đủ thông tin!");
         return;
     }
 
-    loading.classList.remove("d-none");
+    // loading.classList.remove("d-none");
 
     let randomId = uuidv4();
     document.getElementById("screen_name").value = "";
@@ -110,16 +79,34 @@ async function submitForm() {
             },
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
         });
-        loading.classList.add("d-none");
+        // loading.classList.add("d-none");
         if (response.ok) {
             const result = await response.json();
             appendMessage("left", result.test_cases, result.screen_name, randomId);
             saveResponse(screen_name, requirement, result.test_cases, );
         } else {
-            if (response.status === 500) {
-                console.error("❌ Lỗi 500: Internal Server Error");
+            switch (response.status) {
+            case 401:
+                console.error("❌ 401 Unauthorized: API key không hợp lệ hoặc chưa cấu hình.");
+                appendMessage("left", "API key không hợp lệ hoặc chưa cấu hình.", "System", randomId);
+                break;
+            case 400:
+                console.error("❌ 400 Bad Request: Yêu cầu không hợp lệ.");
+                appendMessage("left", "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu gửi lên.", "System", randomId);
+                break;
+            case 429:
+                console.error("❌ 429 Too Many Requests: Vượt quá giới hạn sử dụng API.");
+                appendMessage("left", "Bạn đã vượt quá giới hạn sử dụng API. Vui lòng thử lại sau.", "System", randomId);
+                break;
+            case 503:
+                console.error("❌ 503 Service Unavailable: OpenAI đang gặp sự cố.");
+                appendMessage("left", "Dịch vụ OpenAI hiện đang gặp sự cố. Vui lòng thử lại sau.", "System", randomId);
+                break;
+            case 500:
+                console.error("❌ 500 Internal Server Error");
                 appendMessage("left", "Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau.", "System", randomId);
-            } else {
+                break;
+            default:
                 console.error(`❌ Lỗi ${response.status}: ${response.statusText}`);
                 appendMessage("left", `Lỗi ${response.status}: ${response.statusText}`, "System", randomId);
             }
@@ -128,7 +115,7 @@ async function submitForm() {
         console.error("Lỗi:", error);
         alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
     } finally {
-        loading.classList.add("d-none");
+        // loading.classList.add("d-none");
     }
 }
 
@@ -145,18 +132,35 @@ async function fetchHistoryList() {
 
         uniqueHistories.forEach(history => {
             const listItem = document.createElement("li");
-            listItem.className = "nav-item histories";
+            listItem.className = "histories";
+
             listItem.innerHTML = `
                 <div id="history-${history.id}" 
-                    class="history-item d-flex justify-content-between align-items-center px-3" 
-                    onclick="loadChats(${history.id})", style="padding: 8px;">
-                    <p class="mb-0 text-left flex-grow-1">${history.title}</p>
-                    <button class="btn btn-danger btn-sm ms-2" onclick="deleteHistory(${history.id}, event)">Xóa</button>
+                    class="history-item flex justify-between items-center px-3 py-2 hover:bg-gray-100 rounded cursor-pointer"
+                    onclick="loadChats(${history.id})">
+                    
+                    <p class="m-0 text-left flex-grow">${history.title}</p>
+                    
+                    <button 
+                        class="bg-red-500 hover:bg-red-600 p-2 rounded flex items-center justify-center"
+                        onclick="deleteHistory(${history.id}, event)">
+                        <!-- Trash icon thân to, nắp cân đối, 2 thanh mảnh ở giữa -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-white">
+                            <path stroke-linecap="round" stroke-linejoin="round" 
+                                d="M4 6h16M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M5 6h14l-1.5 12a2 2 0 01-2 2H8.5a2 2 0 01-2-2L5 6z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" 
+                                d="M10 10v6M14 10v6"/>
+                        </svg>
+                    </button>
                 </div>
             `;
             sidebarList.appendChild(listItem);
+
             if (historyId === history.id) {
-                listItem.style.background = "gray";
+                listItem.querySelector(".history-item").classList.add("bg-gray-300");
             }
         });
     } catch (error) {
@@ -199,23 +203,28 @@ function displayChats(chats) {
         chatIDs.push(chat.id);
         if ((chat.url_requirement == null || chat.url_requirement == '') && chat.url_result !== "") {
             const url_result = chat.url_result.split("/").pop();
+            let fileTitle = "Dưới đây là file testcase đã tạo";
+            if (chat.url_result.toLowerCase().includes("spec")) {
+                fileTitle = `Template spec của màn hình chức năng "${chat.screen_name}"`;
+            } else if (chat.url_result.toLowerCase().includes("api")) {
+                 fileTitle = `Template api của màn hình chức năng "${chat.screen_name}"`;
+            }
             const msgHTML = `
-                <div class="msg-container">
+                <div class="msg-container space-y-[20px]">
                     ${rigthInnerHTML(chat)}
-                </div>
-                <div class="msg-container">
-                    <div class="msg left-msg">
-                        <div class="file-box">
-                            <img src="static/image/sheets.png" alt="file">
-                            <div>
-                                <div class="file-name">${url_result}</div>
-                                <div class="d-flex justify-content-between">
-                                    <div class="file-type">Bảng tính</div>
-                                    <div class="download-link">
-                                       <a href="${chat.url_result}" download>
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </div>
+                    <div class="w-full">
+                        <div><span class="font-medium text-sm text-black">${fileTitle}</span></div>
+                        <div class="w-75 p-2.5 border border-gray-200 rounded-md">
+                            <div class="flex items-center gap-2">
+                                <img src="static/image/sheets.png" alt="file" class="w-5 h-5">
+                                <div class="flex flex-col w-full">
+                                <!-- Tên file có thể click để tải -->
+                                <a href="${chat.url_result}" 
+                                    download 
+                                    class="font-medium text-sm truncate text-blue-600 hover:underline">
+                                    ${url_result}
+                                </a>
+                                <span class="text-xs text-gray-500 mt-0.5">Bảng tính</span>
                                 </div>
                             </div>
                         </div>
@@ -227,58 +236,68 @@ function displayChats(chats) {
             const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
             const url_result = chat.url_result.split("/").pop();
             const msgHTML = `
-                <div class="msg-container">
-                    <div class="msg right-msg">
-                        <div class="file-box">
-                            <img src="static/image/sheets.png" alt="file">
-                            <div>
-                                <div class="file-name">${url_requirement}</div>
-                                    <div class="d-flex justify-content-between">
-                                        <div class="file-type">Bảng tính</div>
-                                        <div class="download-link">
-                                        <a href="${chat.url_requirement}" download>
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </div>
+                <div class="msg-container space-y-[20px]">
+                    <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+                        <!-- Thời gian góc phải trên -->
+                        <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+                            ${formatDate(chat.created_at)}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <img src="static/image/sheets.png" alt="file" class="w-5 h-5">
+                            <div class="flex flex-col w-full">
+                                <div class="font-medium text-sm truncate">${url_requirement}</div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-0.5">
+                                    <span>Bảng tính</span>
+                                    <a href="${chat.url_requirement}" 
+                                    download 
+                                    class="flex items-center gap-1 text-blue-600 hover:underline">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor"
+                                            class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 10.5L12 15m0 0l4.5-4.5M12 15V3" />
+                                        </svg>
+                                        Download
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="msg-container">
-                    <div class="msg left-msg">
-                        <div class="file-box">
-                            <img src="static/image/sheets.png" alt="file">
-                            <div>
-                                <div class="file-name">${url_result}</div>
-                                <div class="d-flex justify-content-between">
-                                    <div class="file-type">Bảng tính</div>
-                                    <div class="download-link">
-                                       <a href="${chat.url_result}" download>
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </div>
+                    <div class="w-full">
+                        <div><span class="font-medium text-sm text-black">Dưới đây là file testcase đã tạo</span></div>
+                        <div class="w-75 p-2.5 border border-gray-200 rounded-md">
+                            <div class="flex items-center gap-2">
+                                <img src="static/image/sheets.png" alt="file" class="w-5 h-5">
+                                <div class="flex flex-col w-full">
+                                <!-- Tên file có thể click để tải -->
+                                <a href="${chat.url_result}" 
+                                    download 
+                                    class="font-medium text-sm truncate text-blue-600 hover:underline">
+                                    ${url_result}
+                                </a>
+                                <span class="text-xs text-gray-500 mt-0.5">Bảng tính</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        </div>
                 </div>`;
 
             document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
         } else {
             let msgHTML = `
-                <div id="msg-container-${chat.id}" class="msg-container">
-                    ${rigthInnerHTML(chat.created_at, chat.id, chat.requirement, chat.screen_name)}
-                    <div class="msg left-msg">
-                        <div class="msg-bubble">
-                            <div class="msg-info">
-                                <div class="msg-info-name">bot</div>
-                                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
-                            </div>
-                            ${tableInnerHTML(chat.id)}
-                            <div class="d-flex justify-content-end mt-2">
-                                <button class="btn btn-success" onclick="exportExcel('${chat.id}','${chat.screen_name}')">Export Excel</button>
-                            </div>
+                <div id="msg-container-${chat.id}" class="msg-container space-y-[20px]">
+                    ${rigthInnerHTML(chat)}
+                    <div class="msg left-msg bg-white">
+                        <div><span class="font-medium text-sm text-black">Testcase của màn hình chức năng "${chat.screen_name}"</span></div>
+                        ${tableInnerHTML(chat.id)}
+
+                        <div class="flex justify-end mt-2">
+                        <button 
+                            class="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-3 py-1 rounded-md shadow" 
+                            onclick="exportExcel('${chat.id}','${chat.screen_name}')">
+                            Export Excel
+                        </button>
                         </div>
                     </div>
                 </div>
@@ -308,15 +327,15 @@ function displayChats(chats) {
                 testCases.forEach(row => {
                     let tr = document.createElement("tr");
                     tr.innerHTML = `
-                        <td>${row.id}</td>
-                        <td>${row.priority}</td>
-                        <td>${row.type}</td>
-                        <td>${row.goal}</td>
-                        <td>${row.test_data}</td>
-                        <td>${row.condition}</td>
-                        <td>${row.steps}</td>
-                        <td>${row.expected_result}</td>
-                        <td>${row.note}</td>
+                        <td class="border border-gray-300 px-2 py-1 text-center">${row.id}</td>
+                        <td class="border border-gray-300 px-2 py-1 text-center">${row.priority}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.type}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.goal}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.test_data}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.condition}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.steps}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.expected_result}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.note}</td>
                     `;
                     tableBody.appendChild(tr);
                 });
@@ -333,11 +352,20 @@ async function appendMessage(side, text, screen_name, id) {
     let lastRightId = `msg-container-${id}`;
 
     if (side === "right") {
-        msgHTML = `
-            <div id="${lastRightId}" class="msg-container">
-                ${rigthInnerHTML(new Date(), id, text, screen_name)}
-            </div> 
-        `;
+        const selected = document.querySelector('input[name="fav_language"]:checked');
+        const type = selected ? selected.value : 'spec';
+        msgHTML = `<div id="${lastRightId}" class="msg-container space-y-[20px]">
+                <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+                    <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+                        ${formatDate(new Date())}
+                    </div>
+                    <div class="text-sm text-gray-800 leading-relaxed space-y-1">
+                        <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${screen_name}</div>
+                        <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${text}</div>
+                        <div><span class="font-medium text-gray-700">Loại:</span> ${type}</div>
+                    </div>
+                </div>
+            </div>`;
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
     } else if (isValidJSON(text)) {
         const container = document.getElementById(lastRightId);
@@ -351,16 +379,16 @@ async function appendMessage(side, text, screen_name, id) {
         }      
         if (container) {
             msgHTML = `
-                <div class="msg left-msg">
-                    <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">${screen_name}</div>
-                            <div class="msg-info-time">${new Date().toLocaleTimeString()}</div>
-                        </div>
-                        ${tableInnerHTML(id)}
-                        <div class="d-flex justify-content-end mt-2">
-                            <button class="btn btn-success" onclick="exportExcel('${id}','${screen_name}')">Export Excel</button>
-                        </div>
+                <div class="msg left-msg bg-white">
+                    <div><span class="font-medium text-sm text-black">Testcase của màn hình chức năng "${screen_name}"</span></div>
+                    ${tableInnerHTML(id)}
+
+                    <div class="flex justify-end mt-2">
+                    <button 
+                        class="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-3 py-1 rounded-md shadow" 
+                        onclick="exportExcel('${id}','${screen_name}')">
+                        Export Excel
+                    </button>
                     </div>
                 </div>
             `;
@@ -374,7 +402,15 @@ async function appendMessage(side, text, screen_name, id) {
                     const row = text[index];
 
                     let tr = document.createElement("tr");
-                    tr.innerHTML = `<td></td><td></td><td></td><td></td><td></td><td></td><td></td></td><td></td><td></td>`;
+                    tr.innerHTML = `<td class="border border-gray-300 px-2 py-1 text-center"></td>
+                    <td class="border border-gray-300 px-2 py-1 text-center"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>`;
 
                     tableBody.appendChild(tr);
 
@@ -407,7 +443,7 @@ async function appendMessage(side, text, screen_name, id) {
 
             setTimeout(addRow, 1000);     
         } else {
-            console.error(`Container với id "${lastRightId}" không tìm tiIhấy.`);
+            console.error(`Container với id "${lastRightId}" không tìm thấy.`);
         }
     } else {
         const container = document.getElementById(lastRightId);
@@ -415,10 +451,6 @@ async function appendMessage(side, text, screen_name, id) {
             msgHTML = `
                 <div class="msg left-msg">
                     <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">bot</div>
-                            <div class="msg-info-time">${formatDate(new Date())}</div>
-                        </div>
                         <div class="msg-text" id="${id}-bot"></div>
                     </div>
                 </div>
@@ -446,54 +478,49 @@ function isValidJSON(text) {
 }
 
 function tableInnerHTML(id) {
-    return `<div class="msg-text">
-        <table class="table table-bordered" style="width: 1600px;">
-            <thead>
-                <tr>
-                    <th>Số thứ tự</th>
-                    <th>Độ ưu tiên</th>
-                    <th>Loại</th>
-                    <th>Mục tiêu</th>
-                    <th>Dữ liệu kiểm tra</th>
-                    <th>Điều kiện</th>
-                    <th>Các bước kiểm tra</th>
-                    <th>Kết quả mong đợi</th>
-                    <th>Ghi chú</th>
-                </tr>
-            </thead>
-            <tbody id="testcase-body-${id}">
-            </tbody>
-        </table>
+  return `
+    <div class="msg-text overflow-x-auto" id="${id}-bot">
+      <table class="min-w-[1600px] border border-gray-300 text-sm text-left">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="border border-gray-300 px-2 py-1">STT</th>
+            <th class="border border-gray-300 px-2 py-1">Độ ưu tiên</th>
+            <th class="border border-gray-300 px-2 py-1">Loại</th>
+            <th class="border border-gray-300 px-2 py-1">Mục tiêu</th>
+            <th class="border border-gray-300 px-2 py-1">Dữ liệu kiểm tra</th>
+            <th class="border border-gray-300 px-2 py-1">Điều kiện</th>
+            <th class="border border-gray-300 px-2 py-1">Các bước kiểm tra</th>
+            <th class="border border-gray-300 px-2 py-1">Kết quả mong đợi</th>
+            <th class="border border-gray-300 px-2 py-1">Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody id="testcase-body-${id}">
+        </tbody>
+      </table>
     </div>`;
 }
 
 function rigthInnerHTML(chat) {
     if (chat.url_result && !chat.url_requirement) {
         const type = chat.url_result.includes('_spec') ? 'spec' : 'api';
-        return `<div class="msg right-msg">
-            <div class="msg-bubble">
-                <div class="msg-info">
-                    <div class="msg-info-name">user</div>
-                    <div class="msg-info-time">${formatDate(chat.created_at)}</div>
-                </div>
-                <div class="msg-text" id="${chat.id}">
-                    <strong>Màn hình chức năng:</strong> ${chat.screen_name}<br>
-                    <strong>Yêu cầu:</strong> ${chat.requirement}<br>
-                    <strong>Loại:</strong> ${type}
-                </div>
+        return `<div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+            <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+                ${formatDate(chat.created_at)}
+            </div>
+            <div class="text-sm text-gray-800 leading-relaxed space-y-1">
+                <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${chat.screen_name}</div>
+                <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${chat.requirement}</div>
+                <div><span class="font-medium text-gray-700">Loại:</span> ${type}</div>
             </div>
         </div>`;
     }
-    return `<div class="msg right-msg">
-        <div class="msg-bubble">
-            <div class="msg-info">
-                <div class="msg-info-name">user</div>
-                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
-            </div>
-            <div class="msg-text" id="${chat.id}">
-                <strong>Màn hình chức năng:</strong> ${chat.screen_name}<br>
-                <strong>Yêu cầu:</strong> ${chat.requirement}
-            </div>
+    return `<div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+        <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+            ${formatDate(chat.created_at)}
+        </div>
+        <div class="text-sm text-gray-800 leading-relaxed space-y-1"  id="${chat.id}">
+            <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${chat.screen_name}</div>
+            <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${chat.requirement}</div>
         </div>
     </div>`;
 }
