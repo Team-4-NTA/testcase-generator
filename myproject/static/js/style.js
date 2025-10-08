@@ -132,35 +132,31 @@ async function fetchHistoryList() {
 
         uniqueHistories.forEach(history => {
             const listItem = document.createElement("li");
-            listItem.className = "histories";
+            listItem.className = "mx-2 p-2 rounded-lg hover:bg-stone-200 flex items-center gap-2 group cursor-pointer";
+            listItem.id = `history-${history.id}`;
+            listItem.onclick = () => loadChats(history.id);
 
             listItem.innerHTML = `
-                <div id="history-${history.id}" 
-                    class="history-item flex justify-between items-center px-3 py-2 hover:bg-gray-100 rounded cursor-pointer"
-                    onclick="loadChats(${history.id})">
-                    
-                    <p class="m-0 text-left flex-grow">${history.title}</p>
-                    
-                    <button 
-                        class="bg-red-500 hover:bg-red-600 p-2 rounded flex items-center justify-center"
-                        onclick="deleteHistory(${history.id}, event)">
-                        <!-- Trash icon thân to, nắp cân đối, 2 thanh mảnh ở giữa -->
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-white">
-                            <path stroke-linecap="round" stroke-linejoin="round" 
-                                d="M4 6h16M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M5 6h14l-1.5 12a2 2 0 01-2 2H8.5a2 2 0 01-2-2L5 6z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" 
-                                d="M10 10v6M14 10v6"/>
-                        </svg>
-                    </button>
-                </div>
+                <span class="truncate block w-full">
+                    ${history.title}
+                </span>
+                <button 
+                    class="opacity-0 group-hover:opacity-100 transition"
+                    onclick="deleteHistory(${history.id}, event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        width="18" height="18" viewBox="0 0 24 24">
+                        <path
+                            fill="#1e2939"
+                            d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zm-7 11q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17M7 6v13z"
+                        />
+                    </svg>
+                </button>
             `;
+
             sidebarList.appendChild(listItem);
 
             if (historyId === history.id) {
-                listItem.querySelector(".history-item").classList.add("bg-gray-300");
+                listItem.classList.add("bg-gray-300");
             }
         });
     } catch (error) {
@@ -289,25 +285,33 @@ function displayChats(chats) {
                 <div id="msg-container-${chat.id}" class="msg-container space-y-[20px]">
                     ${rigthInnerHTML(chat)}
                     <div class="msg left-msg bg-white">
-                        <div><span class="font-medium text-sm text-black">Testcase của màn hình chức năng "${chat.screen_name}"</span></div>
+                        <div>
+                            <span class="font-medium text-sm text-black">
+                                Testcase của màn hình chức năng "${chat.screen_name}"
+                            </span>
+                        </div>
                         ${tableInnerHTML(chat.id)}
 
                         <div class="flex justify-end mt-2">
-                        <button 
-                            class="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-3 py-1 rounded-md shadow" 
-                            onclick="exportExcel('${chat.id}','${chat.screen_name}')">
-                            Export Excel
-                        </button>
+                            <button 
+                                id="export-btn-${chat.id}"
+                                class="bg-green-500 text-white text-sm font-medium px-3 py-1 rounded-md shadow opacity-50 cursor-not-allowed" 
+                                disabled
+                            >
+                                Export Excel
+                            </button>
                         </div>
                     </div>
                 </div>
             `;
             responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+
             const tableBody = document.getElementById(`testcase-body-${chat.id}`);
+            const exportBtn = document.getElementById(`export-btn-${chat.id}`);
 
             let testCases;
 
-            if (typeof chat.result === "string") {``
+            if (typeof chat.result === "string") {
                 try {
                     testCases = JSON.parse(chat.result);
                     console.log("✅ Đã parse JSON thành mảng:", testCases);
@@ -339,6 +343,14 @@ function displayChats(chats) {
                     `;
                     tableBody.appendChild(tr);
                 });
+
+                // ✅ Sau khi thêm hết test cases -> bật nút export
+                exportBtn.disabled = false;
+                exportBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                exportBtn.classList.add("hover:bg-green-600");
+
+                exportBtn.onclick = () => exportExcel(chat.result, chat.screen_name);
+
             } else {
                 console.error("❌ Không có test cases để hiển thị.");
             }
@@ -369,10 +381,12 @@ async function appendMessage(side, text, screen_name, id) {
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
     } else if (isValidJSON(text)) {
         const container = document.getElementById(lastRightId);
+        let testParse = text;
         if (typeof text === "string") {
             try {
-                text = JSON.parse(text);
-                console.log("✅ JSON đã được parse:", text);
+                testParse = JSON.parse(text);
+                console.log("✅ JSON đã được parse:", testParse);
+                console.log("✅ Text:", text);
             } catch (error) {
                 console.error("❌ Lỗi parse JSON:", error);
             }
@@ -384,22 +398,25 @@ async function appendMessage(side, text, screen_name, id) {
                     ${tableInnerHTML(id)}
 
                     <div class="flex justify-end mt-2">
-                    <button 
-                        class="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-3 py-1 rounded-md shadow" 
-                        onclick="exportExcel('${id}','${screen_name}')">
-                        Export Excel
-                    </button>
+                        <button 
+                            id="export-btn-${id}"
+                            class="bg-green-500 text-white text-sm font-medium px-3 py-1 rounded-md shadow opacity-50 cursor-not-allowed" 
+                            disabled
+                        >
+                            Export Excel
+                        </button>
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML("beforeend", msgHTML);
             const tableBody = document.getElementById(`testcase-body-${id}`);
+            const exportBtn = document.getElementById(`export-btn-${id}`);
 
             let index = 0;
 
             function addRow() {
-                if (index < text.length) {
-                    const row = text[index];
+                if (index < testParse.length) {
+                    const row = testParse[index];
 
                     let tr = document.createElement("tr");
                     tr.innerHTML = `<td class="border border-gray-300 px-2 py-1 text-center"></td>
@@ -426,6 +443,12 @@ async function appendMessage(side, text, screen_name, id) {
 
                     index++; 
                     setTimeout(addRow, 1000);
+                } else {
+                    exportBtn.disabled = false;
+                    exportBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                    exportBtn.classList.add("hover:bg-green-600");
+
+                    exportBtn.onclick = () => exportExcel(text, screen_name);
                 }
             }
 
@@ -479,11 +502,11 @@ function isValidJSON(text) {
 
 function tableInnerHTML(id) {
   return `
-    <div class="msg-text overflow-x-auto" id="${id}-bot">
+    <div class="msg-text overflow-x-auto">
       <table class="min-w-[1600px] border border-gray-300 text-sm text-left">
         <thead class="bg-gray-100">
           <tr>
-            <th class="border border-gray-300 px-2 py-1">STT</th>
+            <th class="border border-gray-300 px-2 py-1">Số thứ tự</th>
             <th class="border border-gray-300 px-2 py-1">Độ ưu tiên</th>
             <th class="border border-gray-300 px-2 py-1">Loại</th>
             <th class="border border-gray-300 px-2 py-1">Mục tiêu</th>
@@ -525,6 +548,47 @@ function rigthInnerHTML(chat) {
     </div>`;
 }
 
+function loadingInnerHTML() {
+    return `<div>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="25"
+            height="25"
+            viewBox="0 0 24 24"
+        >
+            <circle cx="4" cy="12" r="3" fill="#8f8f8f">
+            <animate
+                id="SVG7x14Dcom"
+                fill="freeze"
+                attributeName="opacity"
+                begin="0;SVGqSjG0dUp.end-0.25s"
+                dur="0.75s"
+                values="1;.2"
+            />
+            </circle>
+            <circle cx="12" cy="12" r="3" fill="#8f8f8f" opacity=".4">
+            <animate
+                fill="freeze"
+                attributeName="opacity"
+                begin="SVG7x14Dcom.begin+0.15s"
+                dur="0.75s"
+                values="1;.2"
+            />
+            </circle>
+            <circle cx="20" cy="12" r="3" fill="#8f8f8f" opacity=".3">
+            <animate
+                id="SVGqSjG0dUp"
+                fill="freeze"
+                attributeName="opacity"
+                begin="SVG7x14Dcom.begin+0.3s"
+                dur="0.75s"
+                values="1;.2"
+            />
+            </circle>
+        </svg>
+    </div>`;
+}
+
 async function deleteHistory(history_id, event) {
     event.stopPropagation();
     try {
@@ -547,9 +611,7 @@ async function deleteHistory(history_id, event) {
     }
 }
 
-async function exportExcel(id, screen_name) {
-    const testCase = document.getElementById(`${id}-bot`).innerText;
-
+async function exportExcel(testCase, screen_name) {
     try {
         const response = await fetch("/export-excel", {
             method: "POST",

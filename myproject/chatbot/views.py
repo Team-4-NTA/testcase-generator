@@ -15,6 +15,7 @@ from openai import AuthenticationError, BadRequestError, RateLimitError, APIErro
 
 from .models import Chat, ChatDetail
 from dotenv import load_dotenv
+from io import BytesIO
 
 load_dotenv()
 
@@ -206,7 +207,7 @@ def write_test_case_to_excel(request):
         try:
             data = json.loads(request.body)
             screen_name = data.get('screenName', '')
-            data_test_case = data.get('testCase', '')
+            data_test_case = data.get('testCase', [])
 
             current_dir = os.path.dirname(__file__)
             template_file_path = os.path.join(current_dir, "files/format-testcase.xlsx")
@@ -221,59 +222,41 @@ def write_test_case_to_excel(request):
             sheet["A2"] = screen_name
             sheet["F2"] = date.today()
 
-            test_cases = data_test_case.split("### Test case")[1:]
+            # Nếu testCase là chuỗi JSON thì parse
+            if isinstance(data_test_case, str):
+                try:
+                    data_test_case = json.loads(data_test_case)
+                except Exception:
+                    return JsonResponse({"error": "Invalid testCase format"}, status=400)
+
             row = 9
-            for case in test_cases:
-                columns = []
-                lines = case.splitlines()
-                steps = []
-                for line in lines:
-                    if "Số thứ tự:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Độ ưu tiên:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Loại:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Mục tiêu:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Dữ liệu kiểm tra:" in line:
-                        data_test = line.split(":", 1)[1].strip()
-                        data_test = data_test.replace(",", ",\n")
-                        columns.append(data_test)
-                    elif "Điều kiện:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Các bước kiểm tra:" in line:
-                        steps = []
-                    elif line.strip().startswith(tuple(str(i) + "." for i in range(1, 10))):
-                        steps.append(line.strip())
-                    elif "Kết quả mong đợi:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Ghi chú:" in line:
-                        columns.append(line.split(":")[1].strip())
+            for case in data_test_case:
+                # Đảm bảo có đầy đủ key
+                sheet[f"A{row}"] = case.get("id", "")
+                sheet[f"B{row}"] = case.get("priority", "")
+                sheet[f"C{row}"] = case.get("type", "")
+                sheet[f"D{row}"] = case.get("goal", "")
+                sheet[f"E{row}"] = case.get("test_data", "")
+                sheet[f"F{row}"] = case.get("condition", "")
+                sheet[f"G{row}"] = case.get("steps", "")
+                sheet[f"H{row}"] = case.get("expected_result", "")
+                sheet[f"I{row}"] = case.get("note", "")
+                row += 1
 
-                columns.append("\n".join(steps))
-                if len(columns) == 9:
-                    sheet[f"A{row}"] = columns[0]
-                    sheet[f"B{row}"] = columns[1]
-                    sheet[f"C{row}"] = columns[2]
-                    sheet[f"D{row}"] = columns[3]
-                    sheet[f"E{row}"] = columns[4]
-                    sheet[f"F{row}"] = columns[5]
-                    sheet[f"G{row}"] = columns[8]
-                    sheet[f"H{row}"] = columns[6]
-                    sheet[f"I{row}"] = columns[7]
-                    row += 1
+            # Cho wrap text các ô testcase
+            for r in sheet.iter_rows(min_row=9, max_row=row - 1):
+                for cell in r:
+                    cell.alignment = Alignment(wrap_text=True, vertical="top")
 
-            for row in sheet.iter_rows(min_row=9, max_row=row - 1):
-                for cell in row:
-                    cell.alignment = Alignment(wrap_text=True)
-
-            from io import BytesIO
+            # Xuất file excel
             excel_file = BytesIO()
             workbook.save(excel_file)
             excel_file.seek(0)
 
-            response = HttpResponse(excel_file, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response = HttpResponse(
+                excel_file,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
             response['Content-Disposition'] = f'attachment; filename="{screen_name}_testcase.xlsx"'
             return response
 
@@ -281,4 +264,3 @@ def write_test_case_to_excel(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=400)
-

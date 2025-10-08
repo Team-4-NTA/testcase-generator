@@ -153,36 +153,3 @@ function formatDate(date) {
 
     return `${h.slice(-2)}:${m.slice(-2)}`;
 }
-
-async function exportExcel(id, screen_name) {
-    const testCase = document.getElementById(`${id}-bot`).innerText;
-
-    try {
-        const response = await fetch("/export-template", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken
-            },
-            body: JSON.stringify({ testCase: testCase, screenName: screen_name })
-        });
-
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${screen_name}_testcase.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-        } else {
-            const errorData = await response.json();
-            console.error("Error response:", errorData);
-            alert("Có lỗi xảy ra khi export: " + errorData.error);
-        }
-    } catch (error) {
-        console.error("Error export:", error);
-        alert("Có lỗi xảy ra khi export");
-    }
-}
