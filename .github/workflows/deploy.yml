@@ -56,7 +56,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           # Đi tới thư mục chứa docker-compose.yml
-          cd ~/myproject || { echo "Thư mục không tồn tại"; exit 1; }
+          cd ~/testcase-generator || { echo "Thư mục testcase-generator không tồn tại"; exit 1; }
 
           # Cập nhật mã nguồn từ Git (nếu repo được clone)
           if [ -d .git ]; then git pull origin main || { echo "Git pull thất bại"; exit 1; }; fi
