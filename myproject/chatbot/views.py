@@ -13,9 +13,11 @@ import openpyxl
 from openpyxl.styles import Alignment
 
 from .models import Chat, ChatDetail
+from dotenv import load_dotenv
 
+load_dotenv()
 
-client = openai.OpenAI(api_key="")
+client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 def chatgpt_login_testcase(request):
     if request.method == "POST":
         # Lấy dữ liệu từ yêu cầu POST

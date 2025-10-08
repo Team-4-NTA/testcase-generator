@@ -11,10 +11,12 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from openpyxl.styles import Alignment, Border, Side
+from dotenv import load_dotenv
 
 from .models import Chat, ChatDetail
+load_dotenv()
 
-client = openai.OpenAI(api_key="")
+client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 # Đường dẫn thư mục lưu file
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)

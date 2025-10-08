@@ -8,6 +8,8 @@ services:
     command: python manage.py runserver 0.0.0.0:8888
     volumes:
       - ./myproject:/app
+    env_file:
+      - .env
     ports:
       - "8888:8888"
     depends_on:
