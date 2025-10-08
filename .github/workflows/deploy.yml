@@ -49,7 +49,7 @@ jobs:
         cache-to: type=inline
 
     - name: Deploy to EC2 via SSH
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v.0.1.3
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
