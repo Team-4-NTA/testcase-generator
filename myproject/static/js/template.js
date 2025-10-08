@@ -1,15 +1,12 @@
 async function createTemplate() {
     const screen_name = document.getElementById("screen_name").value;
     const requirement = document.getElementById("requirement").value;
-    // const loading = document.getElementById("loading");
     const selected = document.querySelector('input[name="fav_language"]:checked');
 
     if (!screen_name || !selected) {
         alert("Vui lòng nhập đầy đủ thông tin!");
         return;
     }
-
-    // loading.classList.remove("d-none");
 
     let randomId = uuidv4();
     document.getElementById("screen_name").value = "";
@@ -28,16 +25,13 @@ async function createTemplate() {
             },
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement, type: selected.value, history_id: window.historyId })
         });
-
-        // loading.classList.add("d-none");
-
         if (response.ok) {
             const result = await response.json();
 
             const randomId = Date.now();
 
             // Hiển thị bảng Spec
-            appendTemplate("left", result, result.screen_name, randomId);
+            appendTemplate("left", result, result.screen_name, randomId, selected.value);
         } else {
             switch (response.status) {
             case 401:
@@ -68,8 +62,6 @@ async function createTemplate() {
     } catch (error) {
         console.error("Lỗi:", error);
         alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
-    } finally {
-        // loading.classList.add("d-none");
     }
 }
 
@@ -81,6 +73,10 @@ async function appendTemplate(side, data, screen_name, id, type = null) {
         const container = document.createElement("div");
         container.id = lastRightId;
         container.classList.add("msg-container");
+        const loadingEl = document.getElementById("loading-spinner");
+        if (loadingEl) {
+        loadingEl.remove();
+        }
 
         container.innerHTML = `
         <div class="w-full">
@@ -119,6 +115,7 @@ async function appendTemplate(side, data, screen_name, id, type = null) {
                 </div>
             </div>`;
         responsesContainer.appendChild(container);
+        responsesContainer.insertAdjacentHTML("beforeend", loadingInnerHTML());
     }
 
     responsesContainer.scrollTop = responsesContainer.scrollHeight;

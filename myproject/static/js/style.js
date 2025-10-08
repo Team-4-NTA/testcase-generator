@@ -32,8 +32,6 @@ async function saveResponse(screen_name, requirement, result) {
     } catch (error) {
         console.error("Lỗi khi lưu:", error);
         alert("Có lỗi xảy ra trong quá trình lưu dữ liệu.");
-    } finally {
-        // loading.classList.add("d-none");
     }
 }
 
@@ -56,14 +54,11 @@ async function submitForm(event) {
     event.preventDefault();
     const screen_name = document.getElementById("screen_name").value;
     const requirement = document.getElementById("requirement").value;
-    // const loading = document.getElementById("loading");
 
     if (!screen_name || !requirement) {
         alert("Vui lòng nhập đầy đủ thông tin!");
         return;
     }
-
-    // loading.classList.remove("d-none");
 
     let randomId = uuidv4();
     document.getElementById("screen_name").value = "";
@@ -79,7 +74,6 @@ async function submitForm(event) {
             },
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
         });
-        // loading.classList.add("d-none");
         if (response.ok) {
             const result = await response.json();
             appendMessage("left", result.test_cases, result.screen_name, randomId);
@@ -114,8 +108,6 @@ async function submitForm(event) {
     } catch (error) {
         console.error("Lỗi:", error);
         alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
-    } finally {
-        // loading.classList.add("d-none");
     }
 }
 
@@ -379,6 +371,7 @@ async function appendMessage(side, text, screen_name, id) {
                 </div>
             </div>`;
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+        responsesContainer.insertAdjacentHTML("beforeend", loadingInnerHTML());
     } else if (isValidJSON(text)) {
         const container = document.getElementById(lastRightId);
         let testParse = text;
@@ -415,6 +408,10 @@ async function appendMessage(side, text, screen_name, id) {
             let index = 0;
 
             function addRow() {
+                const loadingEl = document.getElementById("loading-spinner");
+                if (loadingEl) {
+                loadingEl.remove();
+                }
                 if (index < testParse.length) {
                     const row = testParse[index];
 
@@ -549,7 +546,7 @@ function rigthInnerHTML(chat) {
 }
 
 function loadingInnerHTML() {
-    return `<div>
+    return `<div id="loading-spinner" >
         <svg
             xmlns="http://www.w3.org/2000/svg"
             width="25"
