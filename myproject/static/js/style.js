@@ -64,7 +64,7 @@ async function submitForm(event) {
     document.getElementById("screen_name").value = "";
     document.getElementById("requirement").value = "";
 
-    appendMessage("right", requirement, screen_name, randomId);
+    appendMessage("right", JSON.stringify(requirement), screen_name, randomId);
     try {
         const response = await fetch("", {
             method: "POST",
@@ -77,7 +77,7 @@ async function submitForm(event) {
         if (response.ok) {
             const result = await response.json();
             appendMessage("left", result.test_cases, result.screen_name, randomId);
-            saveResponse(screen_name, requirement, result.test_cases, );
+            saveResponse(screen_name, JSON.stringify(requirement), result.test_cases, );
         } else {
             switch (response.status) {
             case 401:
@@ -356,8 +356,10 @@ async function appendMessage(side, text, screen_name, id) {
     let lastRightId = `msg-container-${id}`;
 
     if (side === "right") {
-        const selected = document.querySelector('input[name="fav_language"]:checked');
-        const type = selected ? selected.value : 'spec';
+        const formatted = 
+            text.replace(/^"(.*)"$/, "$1") 
+            .replace(/\\n/g, "\n")     
+            .replace(/\n/g, "<br>");
         msgHTML = `<div id="${lastRightId}" class="msg-container space-y-[20px]">
                 <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
                     <div class="absolute top-1 right-2 text-[11px] text-gray-400">
@@ -365,14 +367,18 @@ async function appendMessage(side, text, screen_name, id) {
                     </div>
                     <div class="text-sm text-gray-800 leading-relaxed space-y-1">
                         <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${screen_name}</div>
-                        <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${text}</div>
-                        <div><span class="font-medium text-gray-700">Loại:</span> ${type}</div>
+                        <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${formatted}</div>
                     </div>
                 </div>
             </div>`;
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
         responsesContainer.insertAdjacentHTML("beforeend", loadingInnerHTML());
+        setLoadingState(true);
     } else if (isValidJSON(text)) {
+        const loadingEl = document.getElementById("loading-spinner");
+        if (loadingEl) {
+            loadingEl.remove();
+        }
         const container = document.getElementById(lastRightId);
         let testParse = text;
         if (typeof text === "string") {
@@ -406,12 +412,9 @@ async function appendMessage(side, text, screen_name, id) {
             const exportBtn = document.getElementById(`export-btn-${id}`);
 
             let index = 0;
+            let allTypingPromises = [];
 
-            function addRow() {
-                const loadingEl = document.getElementById("loading-spinner");
-                if (loadingEl) {
-                loadingEl.remove();
-                }
+            async function addRow() {
                 if (index < testParse.length) {
                     const row = testParse[index];
 
@@ -434,38 +437,52 @@ async function appendMessage(side, text, screen_name, id) {
                         row.test_data, row.condition, row.steps, 
                         row.expected_result, row.note
                     ];
-                    cells.forEach((cell, i) => {
-                        typeText(cell, values[i]);
+                    
+                    values.forEach((val, i) => {
+                        allTypingPromises.push(typeText(cells[i], val));
                     });
-
-                    index++; 
+                    
+                    index++;
                     setTimeout(addRow, 1000);
                 } else {
-                    exportBtn.disabled = false;
-                    exportBtn.classList.remove("opacity-50", "cursor-not-allowed");
-                    exportBtn.classList.add("hover:bg-green-600");
+                    Promise.all(allTypingPromises).then(() => {
+                        exportBtn.disabled = false;
+                        exportBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                        exportBtn.classList.add("hover:bg-green-600");
 
-                    exportBtn.onclick = () => exportExcel(text, screen_name);
+                        exportBtn.onclick = () => exportExcel(text, screen_name);
+                        setLoadingState(false);
+                    });
                 }
             }
 
             function typeText(element, text, speed = 50) {
-                let i = 0;
-                function typing() {
-                    if (i < text.length) {
-                        element.textContent += text.charAt(i);
-                        i++;
-                        setTimeout(typing, speed);
+                return new Promise(resolve => {
+                    let i = 0;
+                    function typing() {
+                        if (i < text.length) {
+                            element.textContent += text.charAt(i);
+                            i++;
+                            setTimeout(typing, speed);
+                        } else {
+                            resolve(); // chỉ resolve khi typing kết thúc hẳn
+                        }
                     }
-                }
-                typing();
+                    typing();
+                });
             }
 
             setTimeout(addRow, 1000);     
         } else {
+            setLoadingState(false);
             console.error(`Container với id "${lastRightId}" không tìm thấy.`);
         }
     } else {
+        const loadingEl = document.getElementById("loading-spinner");
+        if (loadingEl) {
+            loadingEl.remove();
+            setLoadingState(false);
+        }
         const container = document.getElementById(lastRightId);
         if (container) {
             msgHTML = `
@@ -521,6 +538,10 @@ function tableInnerHTML(id) {
 }
 
 function rigthInnerHTML(chat) {
+    const formatted = 
+            chat.requirement.replace(/^"(.*)"$/, "$1") 
+            .replace(/\\n/g, "\n")     
+            .replace(/\n/g, "<br>");
     if (chat.url_result && !chat.url_requirement) {
         const type = chat.url_result.includes('_spec') ? 'spec' : 'api';
         return `<div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
@@ -529,7 +550,7 @@ function rigthInnerHTML(chat) {
             </div>
             <div class="text-sm text-gray-800 leading-relaxed space-y-1">
                 <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${chat.screen_name}</div>
-                <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${chat.requirement}</div>
+                <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${formatted}</div>
                 <div><span class="font-medium text-gray-700">Loại:</span> ${type}</div>
             </div>
         </div>`;
@@ -540,7 +561,7 @@ function rigthInnerHTML(chat) {
         </div>
         <div class="text-sm text-gray-800 leading-relaxed space-y-1"  id="${chat.id}">
             <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${chat.screen_name}</div>
-            <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${chat.requirement}</div>
+            <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${formatted}</div>
         </div>
     </div>`;
 }
@@ -648,6 +669,22 @@ function formatDate(date) {
     const m = "0" + date.getMinutes();
 
     return `${h.slice(-2)}:${m.slice(-2)}`;
+}
+
+function setLoadingState(isLoading) {
+    const buttons = [
+        document.getElementById("templateBtn"),
+        document.getElementById("uploadBtn"),
+        document.getElementById("sendBtn")
+    ];
+
+    buttons.forEach(btn => {
+        if (isLoading) {
+            btn.setAttribute("disabled", true);
+        } else {
+            btn.removeAttribute("disabled");
+        }
+    });
 }
 
 window.onload = function () {
