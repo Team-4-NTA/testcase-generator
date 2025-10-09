@@ -11,59 +11,74 @@ from django.views.decorators.csrf import csrf_exempt
 import openai
 import openpyxl
 from openpyxl.styles import Alignment
+from openai import AuthenticationError, BadRequestError, RateLimitError, APIError, APIConnectionError
 
 from .models import Chat, ChatDetail
+from dotenv import load_dotenv
+from io import BytesIO
 
+load_dotenv()
 
-client = openai.OpenAI(api_key="")
+client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 def chatgpt_login_testcase(request):
     if request.method == "POST":
-        # Lấy dữ liệu từ yêu cầu POST
-        data = json.loads(request.body)
-        screen_name = data.get('screen_name', '')
-        requirement = data.get('requirement', '')
+        try:
+            # Lấy dữ liệu từ yêu cầu POST
+            data = json.loads(request.body)
+            screen_name = data.get('screen_name', '')
+            requirement = data.get('requirement', '')
 
-        prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}'. "
-          "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
-          "Số thứ tự: <số thứ tự>\n"
-          "Độ ưu tiên: <độ ưu tiên của test case>\n"
-          "Loại: <loại test case>\n"
-          "Mục tiêu: <mục tiêu test case>\n"
-          "Dữ liệu kiểm tra: <dữ liệu để test>\n"
-          "Điều kiện: <điều kiện để test>\n"
-          "Các bước kiểm tra: <các bước để test>\n"
-          "Kết quả mong đợi: <kết quả mong đợt>\n"
-          "Ghi chú: <ghi chú>\n\n"
-          "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
-          "### Test case 1\n"
-          "Số thứ tự: 1\n"
-          "Độ ưu tiên: Cao\n"
-          "Loại: Kiểm thử chức năng\n"
-          "Mục tiêu: Đăng nhập thành công với thông tin hợp lệ\n"
-          "Dữ liệu kiểm tra: Tên người dùng: 'user123', Mật khẩu: 'password123'\n"
-          "Điều kiện: Người dùng đã có tài khoản hợp lệ\n"
-          "Các bước kiểm tra:\n"
-          "    1. Nhập 'user123' vào trường Tên người dùng.\n"
-          "    2. Nhập 'password123' vào trường Mật khẩu.\n"
-          "    3. Nhấn nút 'Đăng nhập'.\n"
-          "Kết quả mong đợi: đăng nhập thành công"
-          "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
-          "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
-        )
+            prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}'. "
+            "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
+            "Số thứ tự: <số thứ tự>\n"
+            "Độ ưu tiên: <độ ưu tiên của test case>\n"
+            "Loại: <loại test case>\n"
+            "Mục tiêu: <mục tiêu test case>\n"
+            "Dữ liệu kiểm tra: <dữ liệu để test>\n"
+            "Điều kiện: <điều kiện để test>\n"
+            "Các bước kiểm tra: <các bước để test>\n"
+            "Kết quả mong đợi: <kết quả mong đợt>\n"
+            "Ghi chú: <ghi chú>\n\n"
+            "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
+            "### Test case 1\n"
+            "Số thứ tự: 1\n"
+            "Độ ưu tiên: Cao\n"
+            "Loại: Kiểm thử chức năng\n"
+            "Mục tiêu: Đăng nhập thành công với thông tin hợp lệ\n"
+            "Dữ liệu kiểm tra: Tên người dùng: 'user123', Mật khẩu: 'password123'\n"
+            "Điều kiện: Người dùng đã có tài khoản hợp lệ\n"
+            "Các bước kiểm tra:\n"
+            "    1. Nhập 'user123' vào trường Tên người dùng.\n"
+            "    2. Nhập 'password123' vào trường Mật khẩu.\n"
+            "    3. Nhấn nút 'Đăng nhập'.\n"
+            "Kết quả mong đợi: đăng nhập thành công"
+            "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
+            "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
+            )
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
-        content = response.choices[0].message.content
-        if "<!DOCTYPE" in content or "<html>" in content:
-            print("❌ Lỗi: API trả về HTML thay vì JSON!")
-            return JsonResponse({"error": "API returned an invalid response"}, status=500)
-        test_case_text = response.choices[0].message.content
-        test_cases = parse_test_cases(test_case_text)
-        return JsonResponse({"screen_name": screen_name, "test_cases": test_cases})
+            response = client.chat.completions.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            content = response.choices[0].message.content
+            if "<!DOCTYPE" in content or "<html>" in content:
+                return JsonResponse({"error": "API returned invalid response"}, status=502)
+
+            test_cases = parse_test_cases(content)
+            return JsonResponse({"screen_name": screen_name, "test_cases": test_cases})
+
+        except AuthenticationError:
+            return JsonResponse({"error": "Sai API key hoặc chưa cấu hình."}, status=401)
+        except BadRequestError as e:
+            return JsonResponse({"error": f"Yêu cầu không hợp lệ: {str(e)}"}, status=400)
+        except RateLimitError:
+            return JsonResponse({"error": "Vượt quá giới hạn sử dụng API."}, status=429)
+        except (APIError, APIConnectionError) as e:
+            return JsonResponse({"error": f"Lỗi hệ thống OpenAI: {str(e)}"}, status=503)
+        except Exception as e:
+            return JsonResponse({"error": f"Lỗi hệ thống: {str(e)}"}, status=500)
 
     return render(request, "chatbot.html")
 
@@ -114,7 +129,7 @@ def parse_test_cases(text):
 def get_chat_list(request, history_id):
     try:
         chats = ChatDetail.objects.filter(chat_id=history_id).values(
-            "id", "screen_name", "requirement", "result", 
+            "id", "screen_name", "requirement", "result", "chat_type", 
             "url_requirement", "url_result", "created_at"
         )
         return JsonResponse(list(chats), safe=False)
@@ -192,7 +207,7 @@ def write_test_case_to_excel(request):
         try:
             data = json.loads(request.body)
             screen_name = data.get('screenName', '')
-            data_test_case = data.get('testCase', '')
+            data_test_case = data.get('testCase', [])
 
             current_dir = os.path.dirname(__file__)
             template_file_path = os.path.join(current_dir, "files/format-testcase.xlsx")
@@ -207,59 +222,41 @@ def write_test_case_to_excel(request):
             sheet["A2"] = screen_name
             sheet["F2"] = date.today()
 
-            test_cases = data_test_case.split("### Test case")[1:]
+            # Nếu testCase là chuỗi JSON thì parse
+            if isinstance(data_test_case, str):
+                try:
+                    data_test_case = json.loads(data_test_case)
+                except Exception:
+                    return JsonResponse({"error": "Invalid testCase format"}, status=400)
+
             row = 9
-            for case in test_cases:
-                columns = []
-                lines = case.splitlines()
-                steps = []
-                for line in lines:
-                    if "Số thứ tự:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Độ ưu tiên:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Loại:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Mục tiêu:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Dữ liệu kiểm tra:" in line:
-                        data_test = line.split(":", 1)[1].strip()
-                        data_test = data_test.replace(",", ",\n")
-                        columns.append(data_test)
-                    elif "Điều kiện:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Các bước kiểm tra:" in line:
-                        steps = []
-                    elif line.strip().startswith(tuple(str(i) + "." for i in range(1, 10))):
-                        steps.append(line.strip())
-                    elif "Kết quả mong đợi:" in line:
-                        columns.append(line.split(":")[1].strip())
-                    elif "Ghi chú:" in line:
-                        columns.append(line.split(":")[1].strip())
+            for case in data_test_case:
+                # Đảm bảo có đầy đủ key
+                sheet[f"A{row}"] = case.get("id", "")
+                sheet[f"B{row}"] = case.get("priority", "")
+                sheet[f"C{row}"] = case.get("type", "")
+                sheet[f"D{row}"] = case.get("goal", "")
+                sheet[f"E{row}"] = case.get("test_data", "")
+                sheet[f"F{row}"] = case.get("condition", "")
+                sheet[f"G{row}"] = case.get("steps", "")
+                sheet[f"H{row}"] = case.get("expected_result", "")
+                sheet[f"I{row}"] = case.get("note", "")
+                row += 1
 
-                columns.append("\n".join(steps))
-                if len(columns) == 9:
-                    sheet[f"A{row}"] = columns[0]
-                    sheet[f"B{row}"] = columns[1]
-                    sheet[f"C{row}"] = columns[2]
-                    sheet[f"D{row}"] = columns[3]
-                    sheet[f"E{row}"] = columns[4]
-                    sheet[f"F{row}"] = columns[5]
-                    sheet[f"G{row}"] = columns[8]
-                    sheet[f"H{row}"] = columns[6]
-                    sheet[f"I{row}"] = columns[7]
-                    row += 1
+            # Cho wrap text các ô testcase
+            for r in sheet.iter_rows(min_row=9, max_row=row - 1):
+                for cell in r:
+                    cell.alignment = Alignment(wrap_text=True, vertical="top")
 
-            for row in sheet.iter_rows(min_row=9, max_row=row - 1):
-                for cell in row:
-                    cell.alignment = Alignment(wrap_text=True)
-
-            from io import BytesIO
+            # Xuất file excel
             excel_file = BytesIO()
             workbook.save(excel_file)
             excel_file.seek(0)
 
-            response = HttpResponse(excel_file, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response = HttpResponse(
+                excel_file,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
             response['Content-Disposition'] = f'attachment; filename="{screen_name}_testcase.xlsx"'
             return response
 
@@ -267,4 +264,3 @@ def write_test_case_to_excel(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=400)
-

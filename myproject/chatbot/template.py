@@ -11,10 +11,12 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from openpyxl.styles import Alignment, Border, Side
+from dotenv import load_dotenv
 
 from .models import Chat, ChatDetail
+load_dotenv()
 
-client = openai.OpenAI(api_key="")
+client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 # Đường dẫn thư mục lưu file
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
@@ -22,29 +24,46 @@ MEDIA_DIR.mkdir(exist_ok=True)
 
 @csrf_exempt
 def generate_template(request):
-    data = json.loads(request.body)
-    screen_name = data.get("screen_name")
-    requirement = data.get("requirement")
-    type = data.get("type")
-    history_id = data.get('history_id')
-    if type == "spec":
-        template_data = generate_spec_data(data)
-        file_path, file_name = create_excel_file_spec(screen_name, requirement, template_data)
-    elif type == "api":
-        template_data = generate_api_data(data)
-        file_path, file_name = create_excel_file_api(screen_name, template_data)
-    else:
+    try:
+        data = json.loads(request.body)
+        screen_name = data.get("screen_name")
+        requirement = data.get("requirement")
+        type = data.get("type")
+        history_id = data.get('history_id')
+
+        if type == "spec":
+            template_data = generate_spec_data(data)
+            file_path, file_name = create_excel_file_spec(screen_name, requirement, template_data)
+        elif type == "api":
+            template_data = generate_api_data(data)
+            file_path, file_name = create_excel_file_api(screen_name, template_data)
+        else:
+            return JsonResponse(
+                {"error": "Invalid type provided. Valid types are 'spec' or 'api'."},
+                status=400
+            )
+
+        file_path = str(file_path).replace(str(settings.BASE_DIR), "").lstrip("/")
+        save_template(file_path, file_name, screen_name, requirement, history_id)
+
         return JsonResponse({
-            "error": "Invalid type provided. Valid types are 'spec' or 'api'."
-        }, status=400)
-    file_path = str(file_path).replace(str(settings.BASE_DIR), "").lstrip("/")
-    save_template(file_path, file_name, screen_name, requirement, history_id)
-    return JsonResponse({
-        "screen_name": screen_name,
-        "file_name": file_name,
-        "data": template_data,
-        "file_url": str(file_path)
-    })
+            "screen_name": screen_name,
+            "file_name": file_name,
+            "data": template_data,
+            "file_url": str(file_path)
+        })
+
+    except openai.AuthenticationError:
+        return JsonResponse({"error": "API key không hợp lệ hoặc chưa cấu hình."}, status=401)
+
+    except openai.RateLimitError:
+        return JsonResponse({"error": "Bạn đã vượt quá giới hạn sử dụng API."}, status=429)
+
+    except openai.APIError:
+        return JsonResponse({"error": "Dịch vụ OpenAI hiện đang gặp sự cố."}, status=503)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 def generate_spec_data(data):
     screen_name = data.get('screen_name', '')
