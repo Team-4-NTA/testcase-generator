@@ -1,3 +1,5 @@
 *.pyc
 node_modules
 .env
+myproject/static/result/
+myproject/static/upload/
