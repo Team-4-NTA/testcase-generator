@@ -1,0 +1,82 @@
+name: CI/CD Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Run tests
+      run: |
+        if [ -f manage.py ]; then python manage.py test; fi
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # Chỉ deploy khi push lên main
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Web image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/django-app:latest
+        # Thêm cache để tăng tốc (tùy chọn)
+        cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/django-app:latest
+        cache-to: type=inline
+
+    - name: Deploy to EC2 via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Đi tới thư mục chứa docker-compose.yml
+          cd ~/testcase-generator || { echo "Thư mục testcase-generator không tồn tại"; exit 1; }
+
+          # Cập nhật mã nguồn từ Git (nếu repo được clone)
+          if [ -d .git ]; then git pull origin main || { echo "Git pull thất bại"; exit 1; }; fi
+
+          # Kiểm tra và cài Docker Compose nếu cần
+          if ! command -v docker-compose &> /dev/null; then
+            echo "Cài Docker Compose..."
+            sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+          fi
+
+          # Tắt stack cũ và khởi động lại với build mới
+          docker-compose down || true
+          docker-compose up -d --build || { echo "Khởi động stack thất bại"; exit 1; }
+
+          # Chạy migrations và collect static cho Django
+          docker-compose exec web python manage.py migrate --noinput || true
+          docker-compose exec web python manage.py collectstatic --noinput || true
+
+          # Kiểm tra trạng thái container
+          docker ps -a
+          # Log để debug
+          docker-compose logs --tail 20
