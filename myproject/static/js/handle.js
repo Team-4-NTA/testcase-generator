@@ -47,6 +47,7 @@ function handleFileChange(input) {
 
         document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
         document.getElementById("responses").insertAdjacentHTML("beforeend", loadingInnerHTML());
+        setLoadingState(true);
         // Gọi hàm upload file nếu file hợp lệ
         uploadExcel(file);
     }
@@ -82,7 +83,8 @@ async function uploadExcel(file) {
         }
         const loadingEl = document.getElementById("loading-spinner");
         if (loadingEl) {
-        loadingEl.remove();
+            loadingEl.remove();
+            setLoadingState(false);
         }
         msgHTML = `
             <div class="w-full">

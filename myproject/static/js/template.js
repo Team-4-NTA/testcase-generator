@@ -23,7 +23,7 @@ async function createTemplate() {
                 "Content-Type": "application/json",
                 "X-CSRFToken": csrfToken
             },
-            body: JSON.stringify({ screen_name: screen_name, requirement: requirement, type: selected.value, history_id: window.historyId })
+            body: JSON.stringify({ screen_name: screen_name, requirement: JSON.stringify(requirement), type: selected.value, history_id: window.historyId })
         });
         if (response.ok) {
             const result = await response.json();
@@ -75,7 +75,8 @@ async function appendTemplate(side, data, screen_name, id, type = null) {
         container.classList.add("msg-container");
         const loadingEl = document.getElementById("loading-spinner");
         if (loadingEl) {
-        loadingEl.remove();
+            loadingEl.remove();
+            setLoadingState(false);
         }
 
         container.innerHTML = `
@@ -102,6 +103,10 @@ async function appendTemplate(side, data, screen_name, id, type = null) {
         container.id = lastRightId;
         container.classList.add("msg-container");
         container.classList.add("space-y-[20px]");
+        const formatted = 
+            data.replace(/^"(.*)"$/, "$1") 
+            .replace(/\\n/g, "\n")     
+            .replace(/\n/g, "<br>");
 
         container.innerHTML =`
             <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
@@ -110,12 +115,13 @@ async function appendTemplate(side, data, screen_name, id, type = null) {
                 </div>
                 <div class="text-sm text-gray-800 leading-relaxed space-y-1" id="${id}">
                     <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${screen_name}</div>
-                    <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${data}</div>
+                    <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${formatted}</div>
                     <div><span class="font-medium text-gray-700">Loại:</span> ${type}</div>
                 </div>
             </div>`;
         responsesContainer.appendChild(container);
         responsesContainer.insertAdjacentHTML("beforeend", loadingInnerHTML());
+        setLoadingState(true);
     }
 
     responsesContainer.scrollTop = responsesContainer.scrollHeight;

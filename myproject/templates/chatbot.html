@@ -247,9 +247,10 @@
             <div class="flex justify-between items-center">
                 <div class="flex gap-2">
                 <button
+                    id="templateBtn"
                     onclick="createTemplate()"
                     type="button"
-                    class="w-[110px] py-1 px-2 rounded-2xl text-gray-500 border border-gray-200 hover:bg-stone-200 cursor-pointer"
+                    class="w-[110px] py-1 px-2 rounded-2xl text-gray-500 border border-gray-200 hover:bg-stone-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <div class="flex gap-1 items-center">
                     <svg
@@ -267,9 +268,10 @@
                     </div>
                 </button>
                 <button
+                    id="uploadBtn"
                     onclick="triggerFileInput()"
                     type="button"
-                    class="w-[100px] py-1 px-2 rounded-2xl text-gray-500 border border-gray-200 hover:bg-stone-200 cursor-pointer"
+                    class="w-[100px] py-1 px-2 rounded-2xl text-gray-500 border border-gray-200 hover:bg-stone-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <div class="flex gap-1 items-center">
                     <svg
@@ -295,9 +297,10 @@
                 </div>
                 <div>
                 <button
+                    id="sendBtn"
                     onclick="submitForm(event)"
                     type="submit"
-                    class="w-[100px] py-1 px-2 rounded-2xl text-white border border-gray-950 hover:bg-gray-800 bg-gray-950 shadow"
+                    class="w-[100px] py-1 px-2 rounded-2xl text-white border border-gray-950 hover:bg-gray-800 bg-gray-950 shadow disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Send
                 </button>
