@@ -48,7 +48,6 @@ jobs:
         context: .
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/django-app:latest
-        # Thêm cache để tăng tốc (tùy chọn)
         cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/django-app:latest
         cache-to: type=inline
 
@@ -62,15 +61,14 @@ jobs:
     - name: Deploy to EC2 via SSM (AWS CLI)
       id: ssm-command
       run: |
-        # Gửi lệnh SSM để deploy
         COMMAND_ID=$(aws ssm send-command \
           --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
           --document-name "AWS-RunShellScript" \
           --comment "Deploy via GitHub Actions" \
-          --parameters "commands=[\"cd /home/ec2-user/testcase-generator\",\"git fetch origin\",\"git checkout main 2>/dev/null || git checkout -b main origin/main\",\"git pull origin main\",\"docker-compose down || true\",\"docker-compose up -d --build\",\"docker-compose exec web python manage.py migrate --noinput || true\",\"docker-compose exec web python manage.py collectstatic --noinput || true\",\"docker ps -a\",\"docker-compose logs --tail 20\"]" \
+          --parameters "commands=[\"set -e\",\"cd /home/ec2-user/testcase-generator || { echo 'CD failed'; exit 1; }\",\"echo 'Current dir: $(pwd)'\",\"git fetch origin || { echo 'Git fetch failed'; exit 1; }\",\"git checkout main 2>/dev/null || git checkout -b main origin/main\",\"git pull origin main || { echo 'Git pull failed'; exit 1; }\",\"echo 'Latest commit: $(git log -1 --oneline)'\",\"sudo systemctl stop nginx || true\",\"sudo systemctl stop httpd || true\",\"docker-compose down || true\",\"docker-compose up -d --build --force-recreate\",\"docker-compose exec web python manage.py migrate --noinput || true\",\"docker-compose exec web python manage.py collectstatic --noinput || true\",\"docker ps -a\",\"docker-compose logs --tail 20 nginx\"]" \
           --output text \
           --query 'Command.CommandId' \
-          --timeout 300)
+          --timeout 600)
         echo "SSM command sent with ID: $COMMAND_ID"
         echo "command-id=$COMMAND_ID" >> $GITHUB_OUTPUT
         if [ -z "$COMMAND_ID" ]; then
@@ -78,18 +76,31 @@ jobs:
           exit 1
         fi
 
-    - name: Check SSM Command Status
+    - name: Check SSM Command Status and Output
       run: |
-        # Kiểm tra trạng thái lệnh SSM
-        sleep 30
+        sleep 60
         STATUS=$(aws ssm get-command-invocation \
           --command-id "${{ steps.ssm-command.outputs.command-id }}" \
           --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
           --plugin-name "aws:runShellScript" \
           --query 'Status' \
           --output text)
+        OUTPUT=$(aws ssm get-command-invocation \
+          --command-id "${{ steps.ssm-command.outputs.command-id }}" \
+          --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+          --plugin-name "aws:runShellScript" \
+          --query 'StandardOutputContent' \
+          --output text)
+        ERROR=$(aws ssm get-command-invocation \
+          --command-id "${{ steps.ssm-command.outputs.command-id }}" \
+          --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+          --plugin-name "aws:runShellScript" \
+          --query 'StandardErrorContent' \
+          --output text)
         echo "Command Status: $STATUS"
-        if [ "$STATUS" != "Success" ]; then
+        echo "SSM Output: $OUTPUT"
+        echo "SSM Error: $ERROR"
+        if [ "$STATUS" != "Success" ] || [ -n "$ERROR" ]; then
           echo "SSM command failed with status: $STATUS"
           exit 1
         fi
