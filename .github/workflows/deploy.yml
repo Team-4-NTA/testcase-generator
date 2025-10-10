@@ -81,7 +81,7 @@ jobs:
         STATUS=$(aws ssm get-command-invocation \
           --command-id "${{ steps.ssm-command.outputs.command-id }}" \
           --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
-          --plugin-name "AWS-RunShellScript" \
+          --plugin-name "aws:runShellScript" \
           --query 'Status' \
           --output text)
         echo "Command Status: $STATUS"
