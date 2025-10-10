@@ -1,10 +1,9 @@
 name: CI/CD Deploy to EC2
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
+    types: [closed]  # chỉ chạy khi PR được đóng (merged hoặc closed)
 
 jobs:
   test:
@@ -27,7 +26,12 @@ jobs:
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'  # Chỉ deploy khi push lên main
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'develop'
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -48,35 +52,45 @@ jobs:
         cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/django-app:latest
         cache-to: type=inline
 
-    - name: Deploy to EC2 via SSH
-      uses: appleboy/ssh-action@v1.0.3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          # Đi tới thư mục chứa docker-compose.yml
-          cd ~/testcase-generator || { echo "Thư mục testcase-generator không tồn tại"; exit 1; }
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-          # Cập nhật mã nguồn từ Git (nếu repo được clone)
-          if [ -d .git ]; then git pull origin main || { echo "Git pull thất bại"; exit 1; }; fi
+    - name: Deploy to EC2 via SSM (AWS CLI)
+      id: ssm-command
+      run: |
+        # Gửi lệnh SSM để deploy
+        COMMAND_ID=$(aws ssm send-command \
+          --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+          --document-name "AWS-RunShellScript" \
+          --comment "Deploy via GitHub Actions" \
+          --parameters "commands=[\"cd /home/ec2-user/testcase-generator\",\"git fetch origin\",\"git checkout main 2>/dev/null || git checkout -b main origin/main\",\"git pull origin main\",\"docker-compose down || true\",\"docker-compose up -d --build\",\"docker-compose exec web python manage.py migrate --noinput || true\",\"docker-compose exec web python manage.py collectstatic --noinput || true\",\"docker ps -a\",\"docker-compose logs --tail 20\"]" \
+          --output text \
+          --query 'Command.CommandId' \
+          --timeout 300)
+        echo "SSM command sent with ID: $COMMAND_ID"
+        echo "command-id=$COMMAND_ID" >> $GITHUB_OUTPUT
+        if [ -z "$COMMAND_ID" ]; then
+          echo "Failed to get Command ID"
+          exit 1
+        fi
 
-          # Kiểm tra và cài Docker Compose nếu cần
-          if ! command -v docker-compose &> /dev/null; then
-            echo "Cài Docker Compose..."
-            sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-          fi
-
-          # Tắt stack cũ và khởi động lại với build mới
-          docker-compose down || true
-          docker-compose up -d --build || { echo "Khởi động stack thất bại"; exit 1; }
-
-          # Chạy migrations và collect static cho Django
-          docker-compose exec web python manage.py migrate --noinput || true
-          docker-compose exec web python manage.py collectstatic --noinput || true
-
-          # Kiểm tra trạng thái container
-          docker ps -a
-          # Log để debug
-          docker-compose logs --tail 20
+    - name: Check SSM Command Status
+      run: |
+        # Kiểm tra trạng thái lệnh SSM
+        sleep 30
+        STATUS=$(aws ssm get-command-invocation \
+          --command-id "${{ steps.ssm-command.outputs.command-id }}" \
+          --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+          --plugin-name "aws:runShellScript" \
+          --query 'Status' \
+          --output text)
+        echo "Command Status: $STATUS"
+        if [ "$STATUS" != "Success" ]; then
+          echo "SSM command failed with status: $STATUS"
+          exit 1
+        fi
+        echo "Deployment completed via SSM. Check logs in AWS Console for details."
