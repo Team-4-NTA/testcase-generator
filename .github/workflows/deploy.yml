@@ -48,35 +48,31 @@ jobs:
         cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/django-app:latest
         cache-to: type=inline
 
-    - name: Deploy to EC2 via SSH
-      uses: appleboy/ssh-action@v1.0.3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          # Đi tới thư mục chứa docker-compose.yml
-          cd ~/testcase-generator || { echo "Thư mục testcase-generator không tồn tại"; exit 1; }
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-1  # Thay bằng region của EC2 nếu khác
 
-          # Cập nhật mã nguồn từ Git (nếu repo được clone)
-          if [ -d .git ]; then git pull origin main || { echo "Git pull thất bại"; exit 1; }; fi
+    - name: Run Commands via SSM
+      uses: aws-actions/amazon-ssm-send-command@v1
+      with:
+        instance-ids: ${{ secrets.INSTANCE_ID }}  # Thay bằng Instance ID của EC2
+        document-name: AWS-RunShellScript
+        parameters: |
+          commands:
+            - cd /home/ec2-user/testcase-generator
+            - git fetch origin
+            - git checkout main 2>/dev/null || git checkout -b main origin/main
+            - git pull origin main
+            - docker-compose down || true
+            - docker-compose up -d --build
+            - docker-compose exec web python manage.py migrate --noinput
+            - docker-compose exec web python manage.py collectstatic --noinput
+            - docker ps -a
+            - docker-compose logs --tail 20
+        timeout-seconds: 300  # Tùy chọn, thời gian chờ tối đa
 
-          # Kiểm tra và cài Docker Compose nếu cần
-          if ! command -v docker-compose &> /dev/null; then
-            echo "Cài Docker Compose..."
-            sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-          fi
-
-          # Tắt stack cũ và khởi động lại với build mới
-          docker-compose down || true
-          docker-compose up -d --build || { echo "Khởi động stack thất bại"; exit 1; }
-
-          # Chạy migrations và collect static cho Django
-          docker-compose exec web python manage.py migrate --noinput || true
-          docker-compose exec web python manage.py collectstatic --noinput || true
-
-          # Kiểm tra trạng thái container
-          docker ps -a
-          # Log để debug
-          docker-compose logs --tail 20
+    - name: Check SSM Command Output
+      run: echo "Deployment completed via SSM"
