@@ -2,38 +2,6 @@ window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribut
 window.historyId = null;
 let chatIDs = [];
 
-document.getElementById('toggleSidebar').addEventListener('click', function() {
-    var sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('collapsed');
-    var mainContent = document.querySelector('main');
-    if (sidebar.classList.contains('collapsed')) {
-        mainContent.style.width = '100%';
-    } else {
-        if (window.innerWidth > 1200) { 
-            mainContent.style.width = '80%';
-        } else {
-            mainContent.style.width = '70%';
-        } 
-    }
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-    const textarea = document.getElementById("requirement");
-
-    textarea.addEventListener("input", function() {
-        this.style.height = "auto"; // Reset height trước khi đo
-        this.style.height = this.scrollHeight + "px"; // Cập nhật chiều cao theo nội dung
-    });
-});
-
-function toggleCheckbox(selected) {
-    document.querySelectorAll('.checkbox-group input[type="checkbox"]').forEach(checkbox => {
-        if (checkbox !== selected) {
-            checkbox.checked = false;
-        }
-    });
-}
-
 async function saveResponse(screen_name, requirement, result) {
     const chatItem = {
         screen_name: screen_name.trim(),
@@ -64,8 +32,6 @@ async function saveResponse(screen_name, requirement, result) {
     } catch (error) {
         console.error("Lỗi khi lưu:", error);
         alert("Có lỗi xảy ra trong quá trình lưu dữ liệu.");
-    } finally {
-        loading.classList.add("d-none");
     }
 }
 
@@ -84,23 +50,21 @@ function uuidv4() {
     });
 }
 
-async function submitForm() {
+async function submitForm(event) {
+    event.preventDefault();
     const screen_name = document.getElementById("screen_name").value;
     const requirement = document.getElementById("requirement").value;
-    const loading = document.getElementById("loading");
 
     if (!screen_name || !requirement) {
         alert("Vui lòng nhập đầy đủ thông tin!");
         return;
     }
 
-    loading.classList.remove("d-none");
-
     let randomId = uuidv4();
     document.getElementById("screen_name").value = "";
     document.getElementById("requirement").value = "";
 
-    appendMessage("right", requirement, screen_name, randomId);
+    appendMessage("right", JSON.stringify(requirement), screen_name, randomId);
     try {
         const response = await fetch("", {
             method: "POST",
@@ -110,16 +74,33 @@ async function submitForm() {
             },
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
         });
-        loading.classList.add("d-none");
         if (response.ok) {
             const result = await response.json();
             appendMessage("left", result.test_cases, result.screen_name, randomId);
-            saveResponse(screen_name, requirement, result.test_cases, );
+            saveResponse(screen_name, JSON.stringify(requirement), result.test_cases, );
         } else {
-            if (response.status === 500) {
-                console.error("❌ Lỗi 500: Internal Server Error");
+            switch (response.status) {
+            case 401:
+                console.error("❌ 401 Unauthorized: API key không hợp lệ hoặc chưa cấu hình.");
+                appendMessage("left", "API key không hợp lệ hoặc chưa cấu hình.", "System", randomId);
+                break;
+            case 400:
+                console.error("❌ 400 Bad Request: Yêu cầu không hợp lệ.");
+                appendMessage("left", "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu gửi lên.", "System", randomId);
+                break;
+            case 429:
+                console.error("❌ 429 Too Many Requests: Vượt quá giới hạn sử dụng API.");
+                appendMessage("left", "Bạn đã vượt quá giới hạn sử dụng API. Vui lòng thử lại sau.", "System", randomId);
+                break;
+            case 503:
+                console.error("❌ 503 Service Unavailable: OpenAI đang gặp sự cố.");
+                appendMessage("left", "Dịch vụ OpenAI hiện đang gặp sự cố. Vui lòng thử lại sau.", "System", randomId);
+                break;
+            case 500:
+                console.error("❌ 500 Internal Server Error");
                 appendMessage("left", "Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau.", "System", randomId);
-            } else {
+                break;
+            default:
                 console.error(`❌ Lỗi ${response.status}: ${response.statusText}`);
                 appendMessage("left", `Lỗi ${response.status}: ${response.statusText}`, "System", randomId);
             }
@@ -127,8 +108,6 @@ async function submitForm() {
     } catch (error) {
         console.error("Lỗi:", error);
         alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
-    } finally {
-        loading.classList.add("d-none");
     }
 }
 
@@ -145,18 +124,31 @@ async function fetchHistoryList() {
 
         uniqueHistories.forEach(history => {
             const listItem = document.createElement("li");
-            listItem.className = "nav-item histories";
+            listItem.className = "mx-2 p-2 rounded-lg hover:bg-stone-200 flex items-center gap-2 group cursor-pointer";
+            listItem.id = `history-${history.id}`;
+            listItem.onclick = () => loadChats(history.id);
+
             listItem.innerHTML = `
-                <div id="history-${history.id}" 
-                    class="history-item d-flex justify-content-between align-items-center px-3" 
-                    onclick="loadChats(${history.id})", style="padding: 8px;">
-                    <p class="mb-0 text-left flex-grow-1">${history.title}</p>
-                    <button class="btn btn-danger btn-sm ms-2" onclick="deleteHistory(${history.id}, event)">Xóa</button>
-                </div>
+                <span class="truncate block w-full">
+                    ${history.title}
+                </span>
+                <button 
+                    class="opacity-0 group-hover:opacity-100 transition"
+                    onclick="deleteHistory(${history.id}, event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        width="18" height="18" viewBox="0 0 24 24">
+                        <path
+                            fill="#1e2939"
+                            d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zm-7 11q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17M7 6v13z"
+                        />
+                    </svg>
+                </button>
             `;
+
             sidebarList.appendChild(listItem);
+
             if (historyId === history.id) {
-                listItem.style.background = "gray";
+                listItem.classList.add("bg-gray-300");
             }
         });
     } catch (error) {
@@ -199,23 +191,28 @@ function displayChats(chats) {
         chatIDs.push(chat.id);
         if ((chat.url_requirement == null || chat.url_requirement == '') && chat.url_result !== "") {
             const url_result = chat.url_result.split("/").pop();
+            let fileTitle = "Dưới đây là file testcase đã tạo";
+            if (chat.url_result.toLowerCase().includes("spec")) {
+                fileTitle = `Template spec của màn hình chức năng "${chat.screen_name}"`;
+            } else if (chat.url_result.toLowerCase().includes("api")) {
+                 fileTitle = `Template api của màn hình chức năng "${chat.screen_name}"`;
+            }
             const msgHTML = `
-                <div class="msg-container">
+                <div class="msg-container space-y-[20px]">
                     ${rigthInnerHTML(chat)}
-                </div>
-                <div class="msg-container">
-                    <div class="msg left-msg">
-                        <div class="file-box">
-                            <img src="static/image/sheets.png" alt="file">
-                            <div>
-                                <div class="file-name">${url_result}</div>
-                                <div class="d-flex justify-content-between">
-                                    <div class="file-type">Bảng tính</div>
-                                    <div class="download-link">
-                                       <a href="${chat.url_result}" download>
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </div>
+                    <div class="w-full">
+                        <div><span class="font-medium text-sm text-black">${fileTitle}</span></div>
+                        <div class="w-75 p-2.5 border border-gray-200 rounded-md">
+                            <div class="flex items-center gap-2">
+                                <img src="static/image/sheets.png" alt="file" class="w-5 h-5">
+                                <div class="flex flex-col w-full">
+                                <!-- Tên file có thể click để tải -->
+                                <a href="${chat.url_result}" 
+                                    download 
+                                    class="font-medium text-sm truncate text-blue-600 hover:underline">
+                                    ${url_result}
+                                </a>
+                                <span class="text-xs text-gray-500 mt-0.5">Bảng tính</span>
                                 </div>
                             </div>
                         </div>
@@ -227,68 +224,86 @@ function displayChats(chats) {
             const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
             const url_result = chat.url_result.split("/").pop();
             const msgHTML = `
-                <div class="msg-container">
-                    <div class="msg right-msg">
-                        <div class="file-box">
-                            <img src="static/image/sheets.png" alt="file">
-                            <div>
-                                <div class="file-name">${url_requirement}</div>
-                                    <div class="d-flex justify-content-between">
-                                        <div class="file-type">Bảng tính</div>
-                                        <div class="download-link">
-                                        <a href="${chat.url_requirement}" download>
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </div>
+                <div class="msg-container space-y-[20px]">
+                    <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+                        <!-- Thời gian góc phải trên -->
+                        <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+                            ${formatDate(chat.created_at)}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <img src="static/image/sheets.png" alt="file" class="w-5 h-5">
+                            <div class="flex flex-col w-full">
+                                <div class="font-medium text-sm truncate">${url_requirement}</div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-0.5">
+                                    <span>Bảng tính</span>
+                                    <a href="${chat.url_requirement}" 
+                                    download 
+                                    class="flex items-center gap-1 text-blue-600 hover:underline">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor"
+                                            class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 10.5L12 15m0 0l4.5-4.5M12 15V3" />
+                                        </svg>
+                                        Download
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="msg-container">
-                    <div class="msg left-msg">
-                        <div class="file-box">
-                            <img src="static/image/sheets.png" alt="file">
-                            <div>
-                                <div class="file-name">${url_result}</div>
-                                <div class="d-flex justify-content-between">
-                                    <div class="file-type">Bảng tính</div>
-                                    <div class="download-link">
-                                       <a href="${chat.url_result}" download>
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </div>
+                    <div class="w-full">
+                        <div><span class="font-medium text-sm text-black">Dưới đây là file testcase đã tạo</span></div>
+                        <div class="w-75 p-2.5 border border-gray-200 rounded-md">
+                            <div class="flex items-center gap-2">
+                                <img src="static/image/sheets.png" alt="file" class="w-5 h-5">
+                                <div class="flex flex-col w-full">
+                                <!-- Tên file có thể click để tải -->
+                                <a href="${chat.url_result}" 
+                                    download 
+                                    class="font-medium text-sm truncate text-blue-600 hover:underline">
+                                    ${url_result}
+                                </a>
+                                <span class="text-xs text-gray-500 mt-0.5">Bảng tính</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        </div>
                 </div>`;
 
             document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
         } else {
             let msgHTML = `
-                <div id="msg-container-${chat.id}" class="msg-container">
-                    ${rigthInnerHTML(chat.created_at, chat.id, chat.requirement, chat.screen_name)}
-                    <div class="msg left-msg">
-                        <div class="msg-bubble">
-                            <div class="msg-info">
-                                <div class="msg-info-name">bot</div>
-                                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
-                            </div>
-                            ${tableInnerHTML(chat.id)}
-                            <div class="d-flex justify-content-end mt-2">
-                                <button class="btn btn-success" onclick="exportExcel('${chat.id}','${chat.screen_name}')">Export Excel</button>
-                            </div>
+                <div id="msg-container-${chat.id}" class="msg-container space-y-[20px]">
+                    ${rigthInnerHTML(chat)}
+                    <div class="msg left-msg bg-white">
+                        <div>
+                            <span class="font-medium text-sm text-black">
+                                Testcase của màn hình chức năng "${chat.screen_name}"
+                            </span>
+                        </div>
+                        ${tableInnerHTML(chat.id)}
+
+                        <div class="flex justify-end mt-2">
+                            <button 
+                                id="export-btn-${chat.id}"
+                                class="bg-green-500 text-white text-sm font-medium px-3 py-1 rounded-md shadow opacity-50 cursor-not-allowed" 
+                                disabled
+                            >
+                                Export Excel
+                            </button>
                         </div>
                     </div>
                 </div>
             `;
             responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+
             const tableBody = document.getElementById(`testcase-body-${chat.id}`);
+            const exportBtn = document.getElementById(`export-btn-${chat.id}`);
 
             let testCases;
 
-            if (typeof chat.result === "string") {``
+            if (typeof chat.result === "string") {
                 try {
                     testCases = JSON.parse(chat.result);
                     console.log("✅ Đã parse JSON thành mảng:", testCases);
@@ -308,18 +323,26 @@ function displayChats(chats) {
                 testCases.forEach(row => {
                     let tr = document.createElement("tr");
                     tr.innerHTML = `
-                        <td>${row.id}</td>
-                        <td>${row.priority}</td>
-                        <td>${row.type}</td>
-                        <td>${row.goal}</td>
-                        <td>${row.test_data}</td>
-                        <td>${row.condition}</td>
-                        <td>${row.steps}</td>
-                        <td>${row.expected_result}</td>
-                        <td>${row.note}</td>
+                        <td class="border border-gray-300 px-2 py-1 text-center">${row.id}</td>
+                        <td class="border border-gray-300 px-2 py-1 text-center">${row.priority}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.type}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.goal}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.test_data}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.condition}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.steps}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.expected_result}</td>
+                        <td class="border border-gray-300 px-2 py-1">${row.note}</td>
                     `;
                     tableBody.appendChild(tr);
                 });
+
+                // ✅ Sau khi thêm hết test cases -> bật nút export
+                exportBtn.disabled = false;
+                exportBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                exportBtn.classList.add("hover:bg-green-600");
+
+                exportBtn.onclick = () => exportExcel(chat.result, chat.screen_name);
+
             } else {
                 console.error("❌ Không có test cases để hiển thị.");
             }
@@ -333,48 +356,78 @@ async function appendMessage(side, text, screen_name, id) {
     let lastRightId = `msg-container-${id}`;
 
     if (side === "right") {
-        msgHTML = `
-            <div id="${lastRightId}" class="msg-container">
-                ${rigthInnerHTML(new Date(), id, text, screen_name)}
-            </div> 
-        `;
+        const formatted = 
+            text.replace(/^"(.*)"$/, "$1") 
+            .replace(/\\n/g, "\n")     
+            .replace(/\n/g, "<br>");
+        msgHTML = `<div id="${lastRightId}" class="msg-container space-y-[20px]">
+                <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+                    <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+                        ${formatDate(new Date())}
+                    </div>
+                    <div class="text-sm text-gray-800 leading-relaxed space-y-1">
+                        <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${screen_name}</div>
+                        <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${formatted}</div>
+                    </div>
+                </div>
+            </div>`;
         responsesContainer.insertAdjacentHTML("beforeend", msgHTML);
+        responsesContainer.insertAdjacentHTML("beforeend", loadingInnerHTML());
+        setLoadingState(true);
     } else if (isValidJSON(text)) {
+        const loadingEl = document.getElementById("loading-spinner");
+        if (loadingEl) {
+            loadingEl.remove();
+        }
         const container = document.getElementById(lastRightId);
+        let testParse = text;
         if (typeof text === "string") {
             try {
-                text = JSON.parse(text);
-                console.log("✅ JSON đã được parse:", text);
+                testParse = JSON.parse(text);
+                console.log("✅ JSON đã được parse:", testParse);
+                console.log("✅ Text:", text);
             } catch (error) {
                 console.error("❌ Lỗi parse JSON:", error);
             }
         }      
         if (container) {
             msgHTML = `
-                <div class="msg left-msg">
-                    <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">${screen_name}</div>
-                            <div class="msg-info-time">${new Date().toLocaleTimeString()}</div>
-                        </div>
-                        ${tableInnerHTML(id)}
-                        <div class="d-flex justify-content-end mt-2">
-                            <button class="btn btn-success" onclick="exportExcel('${id}','${screen_name}')">Export Excel</button>
-                        </div>
+                <div class="msg left-msg bg-white">
+                    <div><span class="font-medium text-sm text-black">Testcase của màn hình chức năng "${screen_name}"</span></div>
+                    ${tableInnerHTML(id)}
+
+                    <div class="flex justify-end mt-2">
+                        <button 
+                            id="export-btn-${id}"
+                            class="bg-green-500 text-white text-sm font-medium px-3 py-1 rounded-md shadow opacity-50 cursor-not-allowed" 
+                            disabled
+                        >
+                            Export Excel
+                        </button>
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML("beforeend", msgHTML);
             const tableBody = document.getElementById(`testcase-body-${id}`);
+            const exportBtn = document.getElementById(`export-btn-${id}`);
 
             let index = 0;
+            let allTypingPromises = [];
 
-            function addRow() {
-                if (index < text.length) {
-                    const row = text[index];
+            async function addRow() {
+                if (index < testParse.length) {
+                    const row = testParse[index];
 
                     let tr = document.createElement("tr");
-                    tr.innerHTML = `<td></td><td></td><td></td><td></td><td></td><td></td><td></td></td><td></td><td></td>`;
+                    tr.innerHTML = `<td class="border border-gray-300 px-2 py-1 text-center"></td>
+                    <td class="border border-gray-300 px-2 py-1 text-center"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>
+                    <td class="border border-gray-300 px-2 py-1"></td>`;
 
                     tableBody.appendChild(tr);
 
@@ -384,41 +437,57 @@ async function appendMessage(side, text, screen_name, id) {
                         row.test_data, row.condition, row.steps, 
                         row.expected_result, row.note
                     ];
-                    cells.forEach((cell, i) => {
-                        typeText(cell, values[i]);
+                    
+                    values.forEach((val, i) => {
+                        allTypingPromises.push(typeText(cells[i], val));
                     });
-
-                    index++; 
+                    
+                    index++;
                     setTimeout(addRow, 1000);
+                } else {
+                    Promise.all(allTypingPromises).then(() => {
+                        exportBtn.disabled = false;
+                        exportBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                        exportBtn.classList.add("hover:bg-green-600");
+
+                        exportBtn.onclick = () => exportExcel(text, screen_name);
+                        setLoadingState(false);
+                    });
                 }
             }
 
             function typeText(element, text, speed = 50) {
-                let i = 0;
-                function typing() {
-                    if (i < text.length) {
-                        element.textContent += text.charAt(i);
-                        i++;
-                        setTimeout(typing, speed);
+                return new Promise(resolve => {
+                    let i = 0;
+                    function typing() {
+                        if (i < text.length) {
+                            element.textContent += text.charAt(i);
+                            i++;
+                            setTimeout(typing, speed);
+                        } else {
+                            resolve(); // chỉ resolve khi typing kết thúc hẳn
+                        }
                     }
-                }
-                typing();
+                    typing();
+                });
             }
 
             setTimeout(addRow, 1000);     
         } else {
-            console.error(`Container với id "${lastRightId}" không tìm tiIhấy.`);
+            setLoadingState(false);
+            console.error(`Container với id "${lastRightId}" không tìm thấy.`);
         }
     } else {
+        const loadingEl = document.getElementById("loading-spinner");
+        if (loadingEl) {
+            loadingEl.remove();
+            setLoadingState(false);
+        }
         const container = document.getElementById(lastRightId);
         if (container) {
             msgHTML = `
                 <div class="msg left-msg">
                     <div class="msg-bubble">
-                        <div class="msg-info">
-                            <div class="msg-info-name">bot</div>
-                            <div class="msg-info-time">${formatDate(new Date())}</div>
-                        </div>
                         <div class="msg-text" id="${id}-bot"></div>
                     </div>
                 </div>
@@ -446,55 +515,95 @@ function isValidJSON(text) {
 }
 
 function tableInnerHTML(id) {
-    return `<div class="msg-text">
-        <table class="table table-bordered" style="width: 1600px;">
-            <thead>
-                <tr>
-                    <th>Số thứ tự</th>
-                    <th>Độ ưu tiên</th>
-                    <th>Loại</th>
-                    <th>Mục tiêu</th>
-                    <th>Dữ liệu kiểm tra</th>
-                    <th>Điều kiện</th>
-                    <th>Các bước kiểm tra</th>
-                    <th>Kết quả mong đợi</th>
-                    <th>Ghi chú</th>
-                </tr>
-            </thead>
-            <tbody id="testcase-body-${id}">
-            </tbody>
-        </table>
+  return `
+    <div class="msg-text overflow-x-auto">
+      <table class="min-w-[1600px] border border-gray-300 text-sm text-left">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="border border-gray-300 px-2 py-1">Số thứ tự</th>
+            <th class="border border-gray-300 px-2 py-1">Độ ưu tiên</th>
+            <th class="border border-gray-300 px-2 py-1">Loại</th>
+            <th class="border border-gray-300 px-2 py-1">Mục tiêu</th>
+            <th class="border border-gray-300 px-2 py-1">Dữ liệu kiểm tra</th>
+            <th class="border border-gray-300 px-2 py-1">Điều kiện</th>
+            <th class="border border-gray-300 px-2 py-1">Các bước kiểm tra</th>
+            <th class="border border-gray-300 px-2 py-1">Kết quả mong đợi</th>
+            <th class="border border-gray-300 px-2 py-1">Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody id="testcase-body-${id}">
+        </tbody>
+      </table>
     </div>`;
 }
 
 function rigthInnerHTML(chat) {
+    const formatted = 
+            chat.requirement.replace(/^"(.*)"$/, "$1") 
+            .replace(/\\n/g, "\n")     
+            .replace(/\n/g, "<br>");
     if (chat.url_result && !chat.url_requirement) {
         const type = chat.url_result.includes('_spec') ? 'spec' : 'api';
-        return `<div class="msg right-msg">
-            <div class="msg-bubble">
-                <div class="msg-info">
-                    <div class="msg-info-name">user</div>
-                    <div class="msg-info-time">${formatDate(chat.created_at)}</div>
-                </div>
-                <div class="msg-text" id="${chat.id}">
-                    <strong>Màn hình chức năng:</strong> ${chat.screen_name}<br>
-                    <strong>Yêu cầu:</strong> ${chat.requirement}<br>
-                    <strong>Loại:</strong> ${type}
-                </div>
+        return `<div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+            <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+                ${formatDate(chat.created_at)}
+            </div>
+            <div class="text-sm text-gray-800 leading-relaxed space-y-1">
+                <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${chat.screen_name}</div>
+                <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${formatted}</div>
+                <div><span class="font-medium text-gray-700">Loại:</span> ${type}</div>
             </div>
         </div>`;
     }
-    return `<div class="msg right-msg">
-        <div class="msg-bubble">
-            <div class="msg-info">
-                <div class="msg-info-name">user</div>
-                <div class="msg-info-time">${formatDate(chat.created_at)}</div>
-            </div>
-            <div class="msg-text" id="${chat.id}">
-                <strong>Màn hình chức năng:</strong> ${chat.screen_name}<br>
-                <strong>Yêu cầu:</strong> ${chat.requirement}
-            </div>
+    return `<div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
+        <div class="absolute top-1 right-2 text-[11px] text-gray-400">
+            ${formatDate(chat.created_at)}
         </div>
+        <div class="text-sm text-gray-800 leading-relaxed space-y-1"  id="${chat.id}">
+            <div><span class="font-medium text-gray-700">Màn hình chức năng:</span> ${chat.screen_name}</div>
+            <div><span class="font-medium text-gray-700">Yêu cầu:</span> ${formatted}</div>
+        </div>
+    </div>`;
+}
+
+function loadingInnerHTML() {
+    return `<div id="loading-spinner" >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="25"
+            height="25"
+            viewBox="0 0 24 24"
+        >
+            <circle cx="4" cy="12" r="3" fill="#8f8f8f">
+            <animate
+                id="SVG7x14Dcom"
+                fill="freeze"
+                attributeName="opacity"
+                begin="0;SVGqSjG0dUp.end-0.25s"
+                dur="0.75s"
+                values="1;.2"
+            />
+            </circle>
+            <circle cx="12" cy="12" r="3" fill="#8f8f8f" opacity=".4">
+            <animate
+                fill="freeze"
+                attributeName="opacity"
+                begin="SVG7x14Dcom.begin+0.15s"
+                dur="0.75s"
+                values="1;.2"
+            />
+            </circle>
+            <circle cx="20" cy="12" r="3" fill="#8f8f8f" opacity=".3">
+            <animate
+                id="SVGqSjG0dUp"
+                fill="freeze"
+                attributeName="opacity"
+                begin="SVG7x14Dcom.begin+0.3s"
+                dur="0.75s"
+                values="1;.2"
+            />
+            </circle>
+        </svg>
     </div>`;
 }
 
@@ -520,9 +629,7 @@ async function deleteHistory(history_id, event) {
     }
 }
 
-async function exportExcel(id, screen_name) {
-    const testCase = document.getElementById(`${id}-bot`).innerText;
-
+async function exportExcel(testCase, screen_name) {
     try {
         const response = await fetch("/export-excel", {
             method: "POST",
@@ -562,6 +669,22 @@ function formatDate(date) {
     const m = "0" + date.getMinutes();
 
     return `${h.slice(-2)}:${m.slice(-2)}`;
+}
+
+function setLoadingState(isLoading) {
+    const buttons = [
+        document.getElementById("templateBtn"),
+        document.getElementById("uploadBtn"),
+        document.getElementById("sendBtn")
+    ];
+
+    buttons.forEach(btn => {
+        if (isLoading) {
+            btn.setAttribute("disabled", true);
+        } else {
+            btn.removeAttribute("disabled");
+        }
+    });
 }
 
 window.onload = function () {

@@ -1,10 +1,9 @@
 name: CI/CD Deploy to EC2
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
+    types: [closed]  # chỉ chạy khi PR được đóng (merged hoặc closed)
 
 jobs:
   test:
@@ -27,7 +26,12 @@ jobs:
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'  # Chỉ deploy khi push lên main
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'develop'
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -53,7 +57,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region:  ${{ secrets.AWS_REGION }}  # Thay bằng region của EC2 nếu khác
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Deploy to EC2 via SSM (AWS CLI)
       id: ssm-command
