@@ -53,7 +53,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-northeast-1  # Thay bằng region của EC2 nếu khác
+        aws-region:  ${{ secrets.AWS_REGION }}  # Thay bằng region của EC2 nếu khác
 
     - name: Deploy to EC2 via SSM (AWS CLI)
       id: ssm-command
