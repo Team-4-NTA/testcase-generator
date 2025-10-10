@@ -58,7 +58,7 @@ jobs:
     - name: Run Commands via SSM
       uses: aws-actions/amazon-ssm-send-command@v1
       with:
-        instance-ids: ${{ secrets.INSTANCE_ID }}  # Thay bằng Instance ID của EC2
+        instance-ids: ${{ secrets.AWS_REGION }}  # Thay bằng Instance ID của EC2
         document-name: AWS-RunShellScript
         parameters: |
           commands:
