@@ -11,14 +11,17 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
     - name: Run tests
       run: |
         if [ -f manage.py ]; then python manage.py test; fi
@@ -26,7 +29,13 @@ jobs:
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop'
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'develop'
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -56,14 +65,14 @@ jobs:
     - name: Deploy to EC2 via SSM (AWS CLI)
       id: ssm-command
       run: |
-        COMMAND_ID=$(aws ssm send-command \
-          --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+        COMMAND_ID=$(aws ssm send-command --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
           --document-name "AWS-RunShellScript" \
           --comment "Deploy via GitHub Actions" \
           --parameters "commands=[
             \"set -e\",
             \"cd /home/ec2-user/testcase-generator || { echo 'CD failed'; exit 1; }\",
             \"git config --global --add safe.directory /home/ec2-user/testcase-generator\",
+            \"git config --system --add safe.directory /home/ec2-user/testcase-generator\",
             \"echo 'Current dir: $(pwd)'\",
             \"git fetch origin || { echo 'Git fetch failed'; exit 1; }\",
             \"git checkout main 2>/dev/null || git checkout -b main origin/main\",
@@ -77,12 +86,14 @@ jobs:
             \"docker-compose exec web python manage.py collectstatic --noinput || true\",
             \"docker ps -a\",
             \"docker-compose logs --tail 20 nginx\"
-          ]"
+          ]" \
           --output text \
           --query 'Command.CommandId' \
-          --timeout 600)
+          --timeout-seconds 600)
+
         echo "SSM command sent with ID: $COMMAND_ID"
         echo "command-id=$COMMAND_ID" >> $GITHUB_OUTPUT
+
         if [ -z "$COMMAND_ID" ]; then
           echo "Failed to get Command ID"
           exit 1
@@ -90,30 +101,39 @@ jobs:
 
     - name: Check SSM Command Status and Output
       run: |
+        echo "Waiting for SSM command to complete..."
         sleep 60
+
         STATUS=$(aws ssm get-command-invocation \
           --command-id "${{ steps.ssm-command.outputs.command-id }}" \
           --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
           --plugin-name "aws:runShellScript" \
           --query 'Status' \
           --output text)
+
         OUTPUT=$(aws ssm get-command-invocation \
           --command-id "${{ steps.ssm-command.outputs.command-id }}" \
           --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
           --plugin-name "aws:runShellScript" \
           --query 'StandardOutputContent' \
           --output text)
+
         ERROR=$(aws ssm get-command-invocation \
           --command-id "${{ steps.ssm-command.outputs.command-id }}" \
           --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
           --plugin-name "aws:runShellScript" \
           --query 'StandardErrorContent' \
           --output text)
+
         echo "Command Status: $STATUS"
-        echo "SSM Output: $OUTPUT"
-        echo "SSM Error: $ERROR"
+        echo "SSM Output:"
+        echo "$OUTPUT"
+        echo "SSM Error:"
+        echo "$ERROR"
+
         if [ "$STATUS" != "Success" ] || [ -n "$ERROR" ]; then
           echo "SSM command failed with status: $STATUS"
           exit 1
         fi
-        echo "Deployment completed via SSM. Check logs in AWS Console for details."
+
+        echo "Deployment completed successfully via SSM."
