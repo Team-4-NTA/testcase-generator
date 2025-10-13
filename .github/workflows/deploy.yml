@@ -80,7 +80,6 @@ jobs:
             \"git pull https://x-access-token:${{ secrets.TOKEN_GITHUB }}@github.com/Team-4-NTA/testcase-generator.git main || { echo 'Git pull failed'; exit 1; }\",
             \"echo 'Latest commit: $(git log -1 --oneline)'\",
             \"sudo systemctl stop nginx || true\",
-            \"sudo systemctl stop httpd || true\",
             \"docker-compose down || true\",
             \"docker-compose up -d --build --force-recreate\",
             \"docker-compose exec web python manage.py migrate --noinput || true\",
