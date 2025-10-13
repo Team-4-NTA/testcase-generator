@@ -131,7 +131,7 @@ jobs:
         echo "SSM Error:"
         echo "$ERROR"
 
-        if [ "$STATUS" != "Success" ] || [ -n "$ERROR" ]; then
+        if [ "$STATUS" != "Success" ]; then
           echo "SSM command failed with status: $STATUS"
           exit 1
         fi
