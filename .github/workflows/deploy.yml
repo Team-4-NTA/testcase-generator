@@ -70,6 +70,7 @@ jobs:
           --comment "Deploy via GitHub Actions" \
           --parameters "commands=[
             \"set -e\",
+            \"export HOME=/home/ec2-user\",
             \"cd /home/ec2-user/testcase-generator || { echo 'CD failed'; exit 1; }\",
             \"git config --global --add safe.directory /home/ec2-user/testcase-generator\",
             \"git config --system --add safe.directory /home/ec2-user/testcase-generator\",
