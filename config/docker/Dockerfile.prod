@@ -1,0 +1,38 @@
+# Production Dockerfile for testcase_generator
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements files
+COPY requirements/ requirements/
+
+# Install Python packages for production
+RUN pip install --no-cache-dir -r requirements/production.txt
+
+# Copy source code
+COPY src/ .
+
+# Create directories for static and media files
+RUN mkdir -p staticfiles media
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Expose port
+EXPOSE 8888
+
+# Command to run with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8888", "testcase_generator.wsgi:application"]

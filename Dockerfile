@@ -1,20 +1,30 @@
-# Chọn ảnh nền Python chính thức
+# Use official Python image
 FROM python:3.11-slim
 
-# Thiết lập thư mục làm việc trong container
+# Set working directory in container
 WORKDIR /app
 
-# Sao chép các tệp yêu cầu vào container
-COPY requirements.txt .
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
-# Cài đặt các gói Python cần thiết
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements files
+COPY requirements/ requirements/
 
-# Sao chép mã nguồn ứng dụng vào container
-COPY myproject .
+# Install Python packages
+RUN pip install --no-cache-dir -r requirements/development.txt
 
-# Cổng mặc định mà ứng dụng Django sẽ chạy
-EXPOSE 8000
+# Copy source code
+COPY src/ .
 
-# Lệnh chạy ứng dụng Django khi container khởi động
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Create directories for static and media files
+RUN mkdir -p staticfiles media
+
+# Expose port
+EXPOSE 8888
+
+# Command to run Django application
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8888"]

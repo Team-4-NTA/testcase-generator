@@ -1,0 +1,33 @@
+# Include base requirements
+-r base.txt
+
+# Testing framework
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+pytest-xdist==3.5.0
+
+# Test data factories
+factory-boy==3.3.0
+faker==20.1.0
+
+# API testing
+requests-mock==1.11.0
+
+# Database testing
+django-test-plus==2.4.1
+
+# Coverage reporting
+coverage==7.3.2
+codecov==2.1.13
+
+# Performance testing
+locust==2.17.0
+
+# Security testing
+bandit==1.7.5
+safety==2.3.5
+
+# Load testing
+pytest-benchmark==4.0.0
