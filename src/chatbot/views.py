@@ -1,0 +1,266 @@
+# chatbot/views.py
+
+import os
+import re
+import json
+from datetime import date
+
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import openai
+import openpyxl
+from openpyxl.styles import Alignment
+from openai import AuthenticationError, BadRequestError, RateLimitError, APIError, APIConnectionError
+
+from .models import Chat, ChatDetail
+from dotenv import load_dotenv
+from io import BytesIO
+
+load_dotenv()
+
+client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+def chatgpt_login_testcase(request):
+    if request.method == "POST":
+        try:
+            # Lấy dữ liệu từ yêu cầu POST
+            data = json.loads(request.body)
+            screen_name = data.get('screen_name', '')
+            requirement = data.get('requirement', '')
+
+            prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}'. "
+            "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
+            "Số thứ tự: <số thứ tự>\n"
+            "Độ ưu tiên: <độ ưu tiên của test case>\n"
+            "Loại: <loại test case>\n"
+            "Mục tiêu: <mục tiêu test case>\n"
+            "Dữ liệu kiểm tra: <dữ liệu để test>\n"
+            "Điều kiện: <điều kiện để test>\n"
+            "Các bước kiểm tra: <các bước để test>\n"
+            "Kết quả mong đợi: <kết quả mong đợt>\n"
+            "Ghi chú: <ghi chú>\n\n"
+            "Ví dụ: Nếu chức năng là 'Đăng nhập', cung cấp các trường hợp kiểm thử như sau:\n\n"
+            "### Test case 1\n"
+            "Số thứ tự: 1\n"
+            "Độ ưu tiên: Cao\n"
+            "Loại: Kiểm thử chức năng\n"
+            "Mục tiêu: Đăng nhập thành công với thông tin hợp lệ\n"
+            "Dữ liệu kiểm tra: Tên người dùng: 'user123', Mật khẩu: 'password123'\n"
+            "Điều kiện: Người dùng đã có tài khoản hợp lệ\n"
+            "Các bước kiểm tra:\n"
+            "    1. Nhập 'user123' vào trường Tên người dùng.\n"
+            "    2. Nhập 'password123' vào trường Mật khẩu.\n"
+            "    3. Nhấn nút 'Đăng nhập'.\n"
+            "Kết quả mong đợi: đăng nhập thành công"
+            "Ghi chú: Đảm bảo thông tin xác thực hợp lệ.\n"
+            "Hãy viết đầy đủ các test case với yêu cầu trên, ghi đúng format đã có sẵn như ví dụ trên"
+            )
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            content = response.choices[0].message.content
+            if "<!DOCTYPE" in content or "<html>" in content:
+                return JsonResponse({"error": "API returned invalid response"}, status=502)
+
+            test_cases = parse_test_cases(content)
+            return JsonResponse({"screen_name": screen_name, "test_cases": test_cases})
+
+        except AuthenticationError:
+            return JsonResponse({"error": "Sai API key hoặc chưa cấu hình."}, status=401)
+        except BadRequestError as e:
+            return JsonResponse({"error": f"Yêu cầu không hợp lệ: {str(e)}"}, status=400)
+        except RateLimitError:
+            return JsonResponse({"error": "Vượt quá giới hạn sử dụng API."}, status=429)
+        except (APIError, APIConnectionError) as e:
+            return JsonResponse({"error": f"Lỗi hệ thống OpenAI: {str(e)}"}, status=503)
+        except Exception as e:
+            return JsonResponse({"error": f"Lỗi hệ thống: {str(e)}"}, status=500)
+
+    return render(request, "chatbot.html")
+
+def parse_test_cases(text):
+    """
+    Parse nội dung test case thành danh sách JSON.
+    """
+    test_cases = []
+    matches = re.split(r'### Test case \d+', text)
+    for case in matches[1:]:
+        columns = {}
+        lines = case.split("\n")
+        steps = []
+        is_step_section = False
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Số thứ tự:"):
+                columns["id"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Độ ưu tiên:"):
+                columns["priority"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Loại:"):
+                columns["type"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Mục tiêu:"):
+                columns["goal"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Dữ liệu kiểm tra:"):
+                columns["test_data"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Điều kiện:"):
+                columns["condition"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Các bước kiểm tra:"):
+                is_step_section = True
+            elif line.startswith("Kết quả mong đợi:"):
+                columns["expected_result"] = line.split(":", 1)[1].strip()
+                is_step_section = False
+            elif line.startswith("Ghi chú:"):
+                columns["note"] = line.split(":", 1)[1].strip()
+            elif is_step_section and re.match(r'^\d+\.', line):
+                steps.append(line)
+
+        columns["steps"] = "\n".join(steps)
+        # Chỉ thêm nếu có dữ liệu cần thiết
+        required_fields = ["id", "priority", "type", "goal", "test_data", "condition", "steps", "expected_result"]
+        if all(field in columns for field in required_fields):
+            test_cases.append(columns)
+
+    return json.dumps(test_cases, ensure_ascii=False, indent=2)
+
+def get_chat_list(request, history_id):
+    try:
+        chats = ChatDetail.objects.filter(chat_id=history_id).values(
+            "id", "screen_name", "requirement", "result", "chat_type", 
+            "url_requirement", "url_result", "created_at"
+        )
+        return JsonResponse(list(chats), safe=False)
+    except Chat.DoesNotExist:
+        return JsonResponse({"error": "History not found"}, status=404)
+
+def get_history(request):
+    histories = Chat.objects.all().values("id", "title", "created_at").distinct()
+    return JsonResponse(list(histories), safe=False)
+
+@csrf_exempt
+def save_history(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            history_id = data.get('history_id')
+            chat_data = data.get('chat')
+
+            if not chat_data:
+                return JsonResponse({"error": "No chats provided."}, status=400)
+
+            chat_objects = []
+
+            # Nếu có history_id, kiểm tra xem Chat có tồn tại không
+            history = None
+            if history_id:
+                try:
+                    history = Chat.objects.get(id=history_id)
+                except Chat.DoesNotExist:
+                    return JsonResponse({"error": "History not found."}, status=404)
+            else:
+                # Nếu không có history_id, tạo mới Chat
+                history = Chat.objects.create(title=chat_data['screen_name'])
+
+            # Tạo ChatDetail và liên kết với Chat
+            screen_name = chat_data.get('screen_name')
+            requirement = chat_data.get('requirement')
+            result = chat_data.get('result')
+
+            chat = ChatDetail.objects.create(
+                chat_id=history,  
+                screen_name=screen_name,
+                requirement=requirement,
+                result=result,
+                chat_type=2,  # Bắt buộc phải có
+                url_requirement=chat_data.get('url_requirement', ''),  # Tránh lỗi None
+                url_result=chat_data.get('url_result', '') 
+            )
+
+            chat_objects.append(chat)
+            return JsonResponse({"success": True, "history_id": history.id})
+
+        except Exception as e:
+            print("Error:", e)
+            return JsonResponse({"error": f"There was an error saving the history: {str(e)}"}, status=500)
+    else:
+        return JsonResponse({"error": "Invalid method."}, status=405)
+
+@csrf_exempt
+def delete_history(request, history_id):
+    try:
+        history = Chat.objects.get(id=history_id)  # Lấy từ Chat
+        chats = ChatDetail.objects.filter(chat_id=history)  # Lấy tất cả chat_detail
+
+        chats.delete()  # Xóa tất cả ChatDetail
+        history.delete()  # Xóa Chat
+
+        return JsonResponse({"message": "History and associated chats deleted successfully"}, status=200)
+
+    except Chat.DoesNotExist:
+        return JsonResponse({"error": "History not found"}, status=404)
+
+def write_test_case_to_excel(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            screen_name = data.get('screenName', '')
+            data_test_case = data.get('testCase', [])
+
+            current_dir = os.path.dirname(__file__)
+            template_file_path = os.path.join(current_dir, "files/format-testcase.xlsx")
+
+            if not os.path.exists(template_file_path):
+                return JsonResponse({"error": "Template file not found!"}, status=500)
+
+            workbook = openpyxl.load_workbook(template_file_path)
+            sheet = workbook.active
+
+            # Ghi "Tên màn hình" vào ô đầu tiên
+            sheet["A2"] = screen_name
+            sheet["F2"] = date.today()
+
+            # Nếu testCase là chuỗi JSON thì parse
+            if isinstance(data_test_case, str):
+                try:
+                    data_test_case = json.loads(data_test_case)
+                except Exception:
+                    return JsonResponse({"error": "Invalid testCase format"}, status=400)
+
+            row = 9
+            for case in data_test_case:
+                # Đảm bảo có đầy đủ key
+                sheet[f"A{row}"] = case.get("id", "")
+                sheet[f"B{row}"] = case.get("priority", "")
+                sheet[f"C{row}"] = case.get("type", "")
+                sheet[f"D{row}"] = case.get("goal", "")
+                sheet[f"E{row}"] = case.get("test_data", "")
+                sheet[f"F{row}"] = case.get("condition", "")
+                sheet[f"G{row}"] = case.get("steps", "")
+                sheet[f"H{row}"] = case.get("expected_result", "")
+                sheet[f"I{row}"] = case.get("note", "")
+                row += 1
+
+            # Cho wrap text các ô testcase
+            for r in sheet.iter_rows(min_row=9, max_row=row - 1):
+                for cell in r:
+                    cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+            # Xuất file excel
+            excel_file = BytesIO()
+            workbook.save(excel_file)
+            excel_file.seek(0)
+
+            response = HttpResponse(
+                excel_file,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{screen_name}_testcase.xlsx"'
+            return response
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=400)
