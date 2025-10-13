@@ -3,7 +3,7 @@ name: CI/CD Deploy to EC2
 on:
   pull_request:
     branches: [ main ]
-    types: [closed]  # chỉ chạy khi PR được đóng (merged hoặc closed)
+    types: [ closed ]
 
 jobs:
   test:
@@ -26,12 +26,7 @@ jobs:
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.action == 'closed' &&
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.base.ref == 'main' &&
-      github.event.pull_request.head.ref == 'develop'
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop'
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -65,7 +60,24 @@ jobs:
           --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
           --document-name "AWS-RunShellScript" \
           --comment "Deploy via GitHub Actions" \
-          --parameters "commands=[\"set -e\",\"cd /home/ec2-user/testcase-generator || { echo 'CD failed'; exit 1; }\",\"echo 'Current dir: $(pwd)'\",\"git fetch origin || { echo 'Git fetch failed'; exit 1; }\",\"git checkout main 2>/dev/null || git checkout -b main origin/main\",\"git pull origin main || { echo 'Git pull failed'; exit 1; }\",\"echo 'Latest commit: $(git log -1 --oneline)'\",\"sudo systemctl stop nginx || true\",\"sudo systemctl stop httpd || true\",\"docker-compose down || true\",\"docker-compose up -d --build --force-recreate\",\"docker-compose exec web python manage.py migrate --noinput || true\",\"docker-compose exec web python manage.py collectstatic --noinput || true\",\"docker ps -a\",\"docker-compose logs --tail 20 nginx\"]" \
+          --parameters "commands=[
+            \"set -e\",
+            \"cd /home/ec2-user/testcase-generator || { echo 'CD failed'; exit 1; }\",
+            \"git config --global --add safe.directory /home/ec2-user/testcase-generator\",
+            \"echo 'Current dir: $(pwd)'\",
+            \"git fetch origin || { echo 'Git fetch failed'; exit 1; }\",
+            \"git checkout main 2>/dev/null || git checkout -b main origin/main\",
+            \"git pull origin main || { echo 'Git pull failed'; exit 1; }\",
+            \"echo 'Latest commit: $(git log -1 --oneline)'\",
+            \"sudo systemctl stop nginx || true\",
+            \"sudo systemctl stop httpd || true\",
+            \"docker-compose down || true\",
+            \"docker-compose up -d --build --force-recreate\",
+            \"docker-compose exec web python manage.py migrate --noinput || true\",
+            \"docker-compose exec web python manage.py collectstatic --noinput || true\",
+            \"docker ps -a\",
+            \"docker-compose logs --tail 20 nginx\"
+          ]"
           --output text \
           --query 'Command.CommandId' \
           --timeout 600)
