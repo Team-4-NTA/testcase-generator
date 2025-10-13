@@ -5,9 +5,13 @@ services:
     build:
       context: .
     container_name: django_app
-    command: python manage.py runserver 0.0.0.0:8888
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8888"
     volumes:
       - ./myproject:/app
+      - ./staticfiles:/app/staticfiles
     env_file:
       - .env
     ports:
@@ -19,7 +23,7 @@ services:
       DATABASE_NAME: create_testcase_ai
       DATABASE_USER: root
       DATABASE_PASSWORD: Asdf1234#
-      DATABASE_HOST: 127.0.0.1
+      DATABASE_HOST: db
       DATABASE_PORT: 3306
     networks:
       - app-network
@@ -39,6 +43,11 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   nginx:
     image: nginx:alpine
