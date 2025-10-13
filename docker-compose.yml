@@ -13,7 +13,8 @@ services:
     ports:
       - "8888:8888"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_NAME: create_testcase_ai
       DATABASE_USER: root
