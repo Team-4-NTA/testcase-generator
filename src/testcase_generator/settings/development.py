@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fonms5mv!uh1t*-eulg_g^mnjk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web', 'django_app', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web', 'django_app', '0.0.0.0', 'generation.nitrotech.asia']
 
 # Database
 DATABASES = {
