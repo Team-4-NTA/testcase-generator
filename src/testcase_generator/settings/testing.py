@@ -10,7 +10,7 @@ SECRET_KEY = 'test-secret-key-for-testing-only'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1', 'generation.nitrotech.asia']
 
 # Database for testing
 DATABASES = {
