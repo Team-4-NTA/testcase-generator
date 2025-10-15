@@ -147,9 +147,9 @@ static_root/
 myproject/static/result/
 myproject/static/upload/
 myproject/static/outputs/
-app/static/result/
-app/static/upload/
-app/static/outputs/
+src/static/result/
+src/static/upload/
+src/static/outputs/
 
 # Node.js
 node_modules/
