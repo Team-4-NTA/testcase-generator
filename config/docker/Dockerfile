@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Sao chép mã nguồn ứng dụng vào container
-COPY myproject .
+COPY src .
 
 # Cổng mặc định mà ứng dụng Django sẽ chạy
 EXPOSE 8000
