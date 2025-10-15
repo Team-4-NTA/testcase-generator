@@ -62,7 +62,7 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Deploy to EC2 - Step 1: Navigate to directory
+    - name: Deploy to EC2 - Step 1 - Navigate to directory
       id: ssm-navigate
       run: |
         echo "Navigating to project directory..."
@@ -118,7 +118,7 @@ jobs:
           exit 1
         fi
 
-    - name: Deploy to EC2 - Step 2: Configure Git
+    - name: Deploy to EC2 - Step 2 - Configure Git
       id: ssm-git-config
       run: |
         echo "Configuring Git safe directory..."
@@ -175,7 +175,7 @@ jobs:
           exit 1
         fi
 
-    - name: Deploy to EC2 - Step 3: Git fetch and checkout
+    - name: Deploy to EC2 - Step 3 - Git fetch and checkout
       id: ssm-git-fetch
       run: |
         echo "Fetching and checking out Git repository..."
@@ -234,7 +234,7 @@ jobs:
           exit 1
         fi
 
-    - name: Deploy to EC2 - Step 4: Stop services
+    - name: Deploy to EC2 - Step 4 - Stop services
       id: ssm-stop-services
       run: |
         echo "Stopping Nginx and Docker Compose services..."
@@ -291,7 +291,7 @@ jobs:
           exit 1
         fi
 
-    - name: Deploy to EC2 - Step 5: Start services and run migrations
+    - name: Deploy to EC2 - Step 5 - Start services and run migrations
       id: ssm-start-services
       run: |
         echo "Starting Docker Compose services and running migrations..."
@@ -349,7 +349,7 @@ jobs:
           exit 1
         fi
 
-    - name: Deploy to EC2 - Step 6: Verify deployment
+    - name: Deploy to EC2 - Step 6 - Verify deployment
       id: ssm-verify
       run: |
         echo "Verifying deployment..."
