@@ -102,7 +102,7 @@ jobs:
     - name: Check SSM Command Status and Output
       run: |
         echo "Waiting for SSM command to complete..."
-        sleep 60
+        sleep 10
 
         STATUS=$(aws ssm get-command-invocation \
           --command-id "${{ steps.ssm-command.outputs.command-id }}" \
