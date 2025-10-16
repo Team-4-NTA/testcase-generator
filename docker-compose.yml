@@ -4,9 +4,7 @@ services:
       context: .
     container_name: django_app
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             python manage.py runserver 0.0.0.0:8888"
+      sh -c "python manage.py runserver 0.0.0.0:8888"
     volumes:
       - ./src:/app
       - ./staticfiles:/app/staticfiles
