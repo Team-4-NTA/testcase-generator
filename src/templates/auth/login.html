@@ -1,76 +1,152 @@
-{% extends 'base.html' %}
+{% extends 'auth/base.html' %}
 {% block content %}
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100">
-    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8">
-      <div class="text-center mb-6">
-        <img src="https://cdn-icons-png.flaticon.com/512/992/992490.png" alt="logo" class="w-16 mx-auto mb-3" />
-        <h2 class="text-2xl font-bold text-gray-800">Chào mừng trở lại 👋</h2>
-        <p class="text-gray-500 text-sm mt-1">Đăng nhập để tiếp tục sử dụng hệ thống</p>
+<main class="wrapper">
+  <div class="main-content">
+    <div class="main-content__card">
+      <div class="card__wrapper">
+        <div class="card__item">
+          <div class="card__header">
+            <div class="mb-2 mx-auto">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+              >
+                <g
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-dasharray="20"
+                  stroke-dashoffset="20"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M6 19v-1c0 -2.21 1.79 -4 4 -4h4c2.21 0 4 1.79 4 4v1"
+                  >
+                    <animate
+                      fill="freeze"
+                      attributeName="stroke-dashoffset"
+                      dur="0.2s"
+                      values="20;0"
+                    />
+                  </path>
+                  <path
+                    d="M12 11c-1.66 0 -3 -1.34 -3 -3c0 -1.66 1.34 -3 3 -3c1.66 0 3 1.34 3 3c0 1.66 -1.34 3 -3 3Z"
+                  >
+                    <animate
+                      fill="freeze"
+                      attributeName="stroke-dashoffset"
+                      begin="0.2s"
+                      dur="0.2s"
+                      values="20;0"
+                    />
+                  </path>
+                </g>
+              </svg>
+            </div>
+            <div class="text-xl text-pretty font-semibold text-highlighted">
+              Đăng nhập
+            </div>
+            <div class="mt-1 text-base text-pretty text-gray-700">
+              Vui lòng đăng nhập để truy cập tài khoản của bạn.
+            </div>
+          </div>
+          <div class="card__content">
+            <!-- Oauth -->
+            <div class="oauth">
+              <button type="button" class="oauth__btn">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M21.456 10.154c.123.659.19 1.348.19 2.067c0 5.624-3.764 9.623-9.449 9.623A9.84 9.84 0 0 1 2.353 12a9.84 9.84 0 0 1 9.844-9.844c2.658 0 4.879.978 6.583 2.566l-2.775 2.775V7.49c-1.033-.984-2.344-1.489-3.808-1.489c-3.248 0-5.888 2.744-5.888 5.993s2.64 5.999 5.888 5.999c2.947 0 4.953-1.686 5.365-4h-5.365v-3.839z"
+                  />
+                </svg>
+                <span class="truncate">Google</span>
+              </button>
+              <button type="button" class="oauth__btn">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"
+                  />
+                </svg>
+                <span class="truncate">Github</span>
+              </button>
+            </div>
+
+            <!-- Separator -->
+            <div class="separator__wrapper">
+              <div class="separator__border"></div>
+              <div class="separator__text">
+                <span class="text-sm">hoặc</span>
+              </div>
+              <div class="separator__border"></div>
+            </div>
+
+            <!-- Form auth -->
+            <form id="auth-form" class="auth-form">
+              <div class="text-sm">
+                <label for="auth-email" class="auth-form__label">
+                  Email
+                </label>
+                <div class="mt-1">
+                  <input
+                    id="auth-email"
+                    type="email"
+                    name="email"
+                    placeholder="Nhập email của bạn"
+                    class="auth-form__input"
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+              <div class="text-sm">
+                <label for="auth-password" class="auth-form__label">
+                  Mật khẩu
+                </label>
+                <div class="mt-1">
+                  <input
+                    id="auth-password"
+                    type="password"
+                    name="password"
+                    placeholder="Nhập mật khẩu của bạn"
+                    class="auth-form__input"
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+              <div class="text-sm">
+                <div class="flex gap-2">
+                  <input type="checkbox" id="remember-me" name="remember" />
+                  <label
+                    for="remember-me"
+                    class="block font-medium text-default"
+                  >
+                    Ghi nhớ
+                  </label>
+                </div>
+              </div>
+              <button type="submit" class="auth-form__btn__login">
+                <span class="truncate">Đăng nhập</span>
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
-
-      <form class="space-y-5">
-        <!-- Email hoặc Username -->
-        <div>
-          <label class="block text-gray-700 font-medium mb-1">Email</label>
-          <input
-            type="email"
-            placeholder="Nhập email..."
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-        </div>
-
-        <!-- Password -->
-        <div>
-          <label class="block text-gray-700 font-medium mb-1">Mật khẩu</label>
-          <input
-            type="password"
-            placeholder="Nhập mật khẩu..."
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-        </div>
-
-        <!-- Quên mật khẩu -->
-        <div class="text-right">
-          <a href="#" class="text-sm text-blue-600 hover:underline">Quên mật khẩu?</a>
-        </div>
-
-        <!-- Đăng nhập -->
-        <button
-          type="submit"
-          onclick="login(event)"
-          class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-blue-700 transition"
-        >
-          Đăng nhập
-        </button>
-
-        <!-- Hoặc -->
-        <div class="flex items-center my-4">
-          <div class="flex-grow h-px bg-gray-300"></div>
-          <span class="px-3 text-gray-500 text-sm">Hoặc</span>
-          <div class="flex-grow h-px bg-gray-300"></div>
-        </div>
-
-        <!-- Google -->
-        <button
-          type="button"
-          class="w-full flex items-center justify-center gap-2 border border-gray-300 py-3 rounded-xl hover:bg-gray-50 transition"
-        >
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            alt="Google"
-            class="w-5 h-5"
-          />
-          <span class="font-medium text-gray-700">Đăng nhập với Google</span>
-        </button>
-      </form>
-
-      <!-- Đăng ký -->
-      <p class="text-center text-sm text-gray-600 mt-6">
-        Chưa có tài khoản?
-        <a href="/register" class="text-blue-600 hover:underline font-medium">Đăng ký ngay</a>
-      </p>
     </div>
   </div>
-{% load static %}
-<script src="{% static 'js/auth.js' %}"></script>
+</main>
 {% endblock %}
+ 
