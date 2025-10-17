@@ -3,7 +3,7 @@ Django REST Framework serializers for the chatbot app.
 """
 
 from rest_framework import serializers
-from .models import Chat, ChatDetail
+from core.models import Chat, ChatDetail
 
 
 class ChatSerializer(serializers.ModelSerializer):

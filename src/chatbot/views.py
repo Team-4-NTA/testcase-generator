@@ -13,7 +13,7 @@ import openpyxl
 from openpyxl.styles import Alignment
 from openai import AuthenticationError, BadRequestError, RateLimitError, APIError, APIConnectionError
 
-from .models import Chat, ChatDetail
+from core.models import Chat, ChatDetail
 from dotenv import load_dotenv
 from io import BytesIO
 
