@@ -6,6 +6,7 @@ from django.urls import path
 from . import views, upload, template
 
 urlpatterns = [
+    path('login', template.generate_template, name='generate_template'),
     path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
     path('export-excel', views.write_test_case_to_excel, name='write_test_case_to_excel'),
     path('export-template', views.write_test_case_to_excel, name='write_template_to_excel'),
