@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @layer utilities {
+        /* Wrapper */
+        .wrapper {
+          @apply flex items-center justify-center h-screen bg-gray-100;
+        }
+        /* Main content */
+        .main-content {
+          @apply flex flex-col items-center justify-center gap-4 p-4;
+        }
+        .main-content__card {
+          @apply relative flex rounded-lg bg-white ring ring-gray-200 w-full max-w-md;
+        }
+        /* Separator */
+        .separator__wrapper {
+          @apply flex items-center text-center w-full flex-row;
+        }
+        .separator__border {
+          @apply border-gray-200 w-full border-solid border-t;
+        }
+        .separator__text {
+          @apply font-medium text-gray-500 flex mx-3 whitespace-nowrap;
+        }
+        /* Card */
+        .card__wrapper {
+          @apply relative flex flex-col flex-1 lg:grid gap-x-8 gap-y-4 p-4 sm:p-6;
+        }
+        .card__item {
+          @apply w-full space-y-6;
+        }
+        .card__header {
+          @apply flex flex-col text-center;
+        }
+        .card__content {
+          @apply gap-y-6 flex flex-col;
+        }
+        /* Oauth */
+        .oauth {
+          @apply space-y-3;
+        }
+        .oauth__btn {
+          @apply rounded-md font-medium text-gray-700 ring ring-gray-300 bg-gray-100/50 hover:bg-gray-100 cursor-pointer inline-flex items-center px-2.5 py-1.5 text-sm gap-1.5 w-full justify-center transition;
+        }
+        /* Auth form */
+        .auth-form {
+          @apply space-y-5;
+        }
+        .auth-form__label {
+          @apply block font-medium text-gray-700 after:content-['*'] after:ms-0.5 after:text-rose-500;
+        }
+        .auth-form__input {
+          @apply w-full rounded-md border-0 appearance-none focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 transition-colors px-2.5 py-1.5 text-sm gap-1.5 text-gray-700 ring ring-inset ring-gray-300 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-300;
+        }
+        .auth-form__btn__login {
+          @apply rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2.5 py-1.5 text-sm gap-1.5 w-full justify-center text-white bg-gray-800 hover:bg-gray-700;
+        }
+      }
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
