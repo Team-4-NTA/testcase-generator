@@ -3,7 +3,7 @@ Django forms for the chatbot app.
 """
 
 from django import forms
-from .models import Chat, ChatDetail
+from core.models import Chat, ChatDetail
 
 
 class ChatForm(forms.ModelForm):

@@ -13,7 +13,7 @@ from django.conf import settings
 from openpyxl.styles import Alignment, Border, Side
 from dotenv import load_dotenv
 
-from .models import Chat, ChatDetail
+from core.models import Chat, ChatDetail
 load_dotenv()
 
 client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))

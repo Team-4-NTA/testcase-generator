@@ -17,7 +17,7 @@ from django.core.files.storage import FileSystemStorage
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Alignment
 from django.conf import settings
-from .models import Chat, ChatDetail
+from core.models import Chat, ChatDetail
 from . import views
 from dotenv import load_dotenv
 
