@@ -1,10 +1,9 @@
 """ 
 Module xử lý urls.
 """
-
 from django.urls import path, include
-from . import views, upload, template, auth
 from django.contrib.auth.views import LogoutView
+from . import views, upload, template, auth, confirm_email
 
 urlpatterns = [
     path('login', auth.login_view, name='login'),
@@ -12,6 +11,8 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('forgot-password', auth.forgot_password, name='forgot_password'),
     path('reset-password/<uidb64>/<token>/', auth.reset_password, name='reset_password'),
+    path('register', auth.register, name='register'),
+    path("activate/<uidb64>/<token>/", confirm_email.activate, name="activate"),
     path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
     path('export-excel', views.write_test_case_to_excel, name='write_test_case_to_excel'),
     path('export-template', views.write_test_case_to_excel, name='write_template_to_excel'),

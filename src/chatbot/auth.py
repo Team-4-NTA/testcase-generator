@@ -1,20 +1,19 @@
+import json
+import re
 from django.contrib.auth import authenticate, login, logout
-from django.views.decorators.csrf import csrf_protect
-from django.http import JsonResponse
-from django.shortcuts import render
 from django.contrib.auth.models import User
-from django.shortcuts import redirect, redirect
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.forms import SetPasswordForm
+from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes
+from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
-import json
-from django.utils.encoding import force_str
-import re
+from django.contrib.sites.shortcuts import get_current_site
 
 @csrf_protect
 def login_view(request):
@@ -123,3 +122,87 @@ def reset_password(request, uidb64, token):
 
     return JsonResponse({"success": False, "message": "Phương thức không được hỗ trợ."}, status=405)
 
+def register(request):
+    if request.method == "POST":
+        # Lấy dữ liệu
+        if request.content_type == "application/json":
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                return JsonResponse({"success": False, "message": "Invalid JSON"}, status=400)
+            firstname = data.get("firstname")
+            lastname = data.get("lastname")
+            username = data.get("username")
+            email = data.get("email")
+            password = data.get("password")
+            is_ajax = True
+        else:
+            firstname = data.get("firstname")
+            lastname = data.get("lastname")
+            username = data.get("username")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+            is_ajax = False
+
+        if not email or not password:
+            return JsonResponse({"success": False, "message": "Email và mật khẩu không được để trống."})
+
+        if not lastname or not firstname:
+            return JsonResponse({"success": False, "message": "Họ và tên không được để trống."})
+
+        if not username:
+            return JsonResponse({"success": False, "message": "Tên đăng nhập không được để trống."})
+        
+        if User.objects.filter(username=username).exists():
+            msg = "Username đã tồn tại"
+            if is_ajax:
+                return JsonResponse({"success": False, "message": msg}, status=400)
+            messages.error(request, msg)
+            return redirect("register")
+        
+        if User.objects.filter(email=email).exists():
+            msg = "Email đã tồn tại"
+            if is_ajax:
+                return JsonResponse({"success": False, "message": msg}, status=400)
+            messages.error(request, msg)
+            return redirect("register")
+
+        # Tạo user (chưa active)
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=firstname,
+            last_name=lastname,
+            is_active=False
+        )
+
+        # Tạo token và link xác nhận
+        current_site = get_current_site(request)
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        confirm_link = f"http://{current_site.domain}/activate/{uid}/{token}/"
+
+        # Render email từ template
+        subject = "Xác nhận tài khoản của bạn"
+        message = render_to_string("auth/confirm_email.html", {
+            "user": user,
+            "confirm_link": confirm_link,
+        })
+
+        # Gửi mail
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+
+        success_msg = "Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản."
+        if is_ajax:
+            return JsonResponse({"success": True, "message": success_msg})
+        messages.success(request, success_msg)
+        return redirect("login")
+
+    return render(request, "auth/register.html")
