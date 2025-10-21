@@ -2,15 +2,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}{% endblock %}</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <meta charset="utf-8">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}{% endblock %}</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
+
 <body>
-    {% block content %}{% endblock %}
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    {% block scripts %}{% endblock %}
+  {% block content %}{% endblock %}
+  <!-- Alert success -->
+  <div id="alert-success" class="hidden fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2
+         transform translate-x-full opacity-0 transition-all duration-500 ease-out">
+    <!-- Icon success -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
+      stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0a9 9 0 0118 0z" />
+    </svg>
+    <span id="success-message">Thành công!</span>
+  </div>
+
+  <!-- Alert error -->
+  <div id="alert-error" class="hidden fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2
+         transform translate-x-full opacity-0 transition-all duration-500 ease-out">
+    <!-- Icon error -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
+      stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856A2 2 0 0020 17.07L13.414 4.93a2 2 0 00-2.828 0L4 17.07A2 2 0 005.062 19z" />
+    </svg>
+    <span id="error-message">Đã có lỗi xảy ra!</span>
+  </div>
+  <script src="{% static 'js/alert.js' %}"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

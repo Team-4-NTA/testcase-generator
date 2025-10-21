@@ -147,3 +147,8 @@ ALLOWED_FILE_TYPES = os.getenv('ALLOWED_FILE_TYPES', 'xlsx,xls').split(',')
 # Rate Limiting
 RATE_LIMIT_PER_MINUTE = int(os.getenv('RATE_LIMIT_PER_MINUTE', '60'))
 RATE_LIMIT_PER_HOUR = int(os.getenv('RATE_LIMIT_PER_HOUR', '1000'))
+
+AUTHENTICATION_BACKENDS = [
+    'core.auth_backends.EmailBackend',
+]
+
