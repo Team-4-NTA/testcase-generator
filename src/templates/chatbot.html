@@ -145,6 +145,35 @@
     </nav>
     </aside>
     <div class="w-[calc(100%-260px)] h-screen overflow-auto">
+
+    <!-- User info at bottom -->
+    <div class="absolute bottom-0 left-0 w-[260px] border-t border-gray-200 bg-white">
+    <div class="flex items-center justify-between p-3 hover:bg-gray-50 transition cursor-pointer group" id="userMenuButton">
+        <div class="flex items-center gap-3">
+        <img src="{{ user.socialaccount_set.all.0.get_avatar_url|default:'/static/img/default-avatar.png' }}"
+            alt="Avatar"
+            class="w-9 h-9 rounded-full border border-gray-300 object-cover" />
+        <div>
+            <p class="text-sm font-medium text-gray-800 group-hover:text-black">{{ user.username|default:"Guest" }}</p>
+            <p class="text-xs text-gray-500 truncate w-[140px]">{{ user.email|default:"user@example.com" }}</p>
+        </div>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 group-hover:text-gray-600 rotate-180"
+            viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                clip-rule="evenodd" />
+        </svg>
+    </div>
+
+    <!-- Dropdown -->
+    <div id="userDropdown" 
+     class="hidden absolute bottom-full left-0 w-full mb-1 border border-gray-200 bg-white rounded-t-xl shadow-lg z-50">
+        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ</a>
+        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Đăng xuất</a>
+    </div>
+    </div>
+    
     <header class="h-[52px] sticky top-0 z-10 bg-white">
         <div class="flex h-full p-2 justify-between items-center">
         <div class="py-1 px-2.5 rounded-lg hover:bg-stone-200">
@@ -326,6 +355,21 @@
     window.uuidv4 = function() {
         return uuidv4();
     }
+    document.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("userMenuButton");
+        const menu = document.getElementById("userDropdown");
+        
+        btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+        if (!btn.contains(e.target)) {
+            menu.classList.add("hidden");
+        }
+        });
+    });
 </script>
 {% load static %}
 <script src="{% static 'js/style.js' %}"></script>
