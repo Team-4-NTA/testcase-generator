@@ -1,23 +1,15 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 
-from django.db import models
-
-
-class User(models.Model):
-    username = models.CharField(max_length=100, null=True, blank=True)
-    email = models.EmailField(unique=True)
-    password = models.CharField(max_length=255, null=True, blank=True)
-    avatar = models.CharField(max_length=255, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'users'
+class UserDetail(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
 
     def __str__(self):
-        return self.email
-
+        return self.user.username
+    class Meta:
+        db_table = 'user_details'
 
 class UserProvider(models.Model):
     PROVIDER_CHOICES = [
@@ -38,14 +30,6 @@ class UserProvider(models.Model):
     class Meta:
         db_table = 'user_providers'
 
-
-class UserRole(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roles')
-    role = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'user_roles'
 
 class Chat(models.Model):
     id = models.AutoField(primary_key=True)

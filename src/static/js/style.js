@@ -690,3 +690,22 @@ function setLoadingState(isLoading) {
 window.onload = function () {
     fetchHistoryList();
 };
+
+function showAlert(type, message) {
+  const successAlert = document.getElementById('alert-success');
+  const errorAlert = document.getElementById('alert-error');
+
+  // Ẩn cả hai trước
+  successAlert.classList.add('hidden');
+  errorAlert.classList.add('hidden');
+
+  if (type === 'success') {
+    document.getElementById('success-message').textContent = message;
+    successAlert.classList.remove('hidden');
+    setTimeout(() => successAlert.classList.add('hidden'), 3000);
+  } else if (type === 'error') {
+    document.getElementById('error-message').textContent = message;
+    errorAlert.classList.remove('hidden');
+    setTimeout(() => errorAlert.classList.add('hidden'), 3000);
+  }
+}

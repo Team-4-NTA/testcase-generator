@@ -4,9 +4,11 @@ Module xử lý urls.
 
 from django.urls import path
 from . import views, upload, template, auth
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
-    path('login', auth.login, name='generate_template'),
+    path('login', auth.login_view, name='login'),
+    path('logout', auth.logout_view, name='logout'),
     path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
     path('export-excel', views.write_test_case_to_excel, name='write_test_case_to_excel'),
     path('export-template', views.write_test_case_to_excel, name='write_template_to_excel'),
