@@ -19,7 +19,7 @@ if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'mysql.connector.django',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('DATABASE_NAME'),
         'HOST': os.getenv('DATABASE_HOST'),
         'USER': os.getenv('DATABASE_USER'),
