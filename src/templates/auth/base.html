@@ -71,11 +71,13 @@
 <body>
   <div id="django-messages" style="display:none;">
     {% if messages %}
-    {% for message in messages %}
-    <div class="message {{ message.tags }}" data-tag="{{ message.tags }}">
-      {{ message }}
-    </div>
-    {% endfor %}
+      {% for msg in messages %}
+        {% if "activation" in msg.tags %}
+          <div class="django-msg {{ msg.tags }}" data-tag="{{ msg.tags }}">
+            {{ msg }}
+          </div>
+        {% endif %}
+      {% endfor %}
     {% endif %}
   </div>
   <!-- Modal Overlay -->

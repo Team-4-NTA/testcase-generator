@@ -128,16 +128,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const messagesDiv = document.getElementById("django-messages");
     if (!messagesDiv) return;
 
-    const messages = messagesDiv.querySelectorAll(".message");
+    const messages = messagesDiv.querySelectorAll(".django-msg");
     messages.forEach(msg => {
         const text = msg.textContent.trim();
         const type = msg.dataset.tag || "info";
 
-        if (type === "success") {
-            showAlert('success', 'Đăng ký thành công');
-        } else if (type === "error") {
-            showAlert("error", text);
+        // Chỉ xử lý message có tag "activation"
+        if (type.includes("activation")) {
+            if (type.includes("success")) {
+                showAlert("success", text);
+            } else if (type.includes("error")) {
+                showAlert("error", text);
+            }
         }
+
+        msg.remove();
     });
 });
 
