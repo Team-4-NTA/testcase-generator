@@ -34,6 +34,7 @@ class UserProvider(models.Model):
 class Chat(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.TextField(null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
     created_at = models.DateTimeField(auto_now_add=True, null=False)
     updated_at = models.DateTimeField(auto_now=True, null=False)
     deleted_at = models.DateTimeField(null=True, blank=True)

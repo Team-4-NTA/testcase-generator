@@ -64,6 +64,7 @@ async function uploadExcel(file) {
             headers: {
                 "X-CSRFToken": window.csrfToken
             },
+            credentials: "include",
             body: formData
         });
         const result = await response.json();

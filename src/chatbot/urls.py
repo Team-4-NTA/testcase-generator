@@ -19,7 +19,6 @@ urlpatterns = [
     path('export-template', views.write_test_case_to_excel, name='write_template_to_excel'),
     path('get-chat-list/<int:history_id>', views.get_chat_list, name='get_chat_list'),
     path('get-history/', views.get_history, name='get_history'),
-    path('save-history/', views.save_history, name='save_history'),
     path('delete-history/<int:history_id>/', views.delete_history, name='delete_history'),
     path('upload-template', upload.upload_file, name='upload_file'),
     path('generate-template', template.generate_template, name='generate_template'),

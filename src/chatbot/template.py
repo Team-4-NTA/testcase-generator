@@ -12,6 +12,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from openpyxl.styles import Alignment, Border, Side
 from dotenv import load_dotenv
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 from core.models import Chat, ChatDetail
 load_dotenv()
@@ -30,6 +32,7 @@ def generate_template(request):
         requirement = data.get("requirement")
         type = data.get("type")
         history_id = data.get('history_id')
+        user = getattr(request, "user", None)
 
         if type == "spec":
             template_data = generate_spec_data(data)
@@ -44,7 +47,8 @@ def generate_template(request):
             )
 
         file_path = str(file_path).replace(str(settings.BASE_DIR), "").lstrip("/")
-        save_template(file_path, file_name, screen_name, requirement, history_id)
+        if user and getattr(user, "is_authenticated", False):
+            save_template(file_path, file_name, screen_name, requirement, history_id)
 
         return JsonResponse({
             "screen_name": screen_name,
