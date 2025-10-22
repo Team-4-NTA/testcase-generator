@@ -21,10 +21,20 @@ def activate(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save()
-        messages.success(request, "Tài khoản của bạn đã được kích hoạt!")
+        messages.add_message(
+            request,
+            messages.SUCCESS,
+            "Tài khoản của bạn đã được kích hoạt!",
+            extra_tags="activation"
+        )
         return redirect("login")
     else:
-        messages.error(request, "Link kích hoạt không hợp lệ hoặc đã hết hạn.")
+        messages.add_message(
+            request,
+            messages.ERROR,
+            "Link kích hoạt không hợp lệ hoặc đã hết hạn.",
+            extra_tags="activation"
+        )
         return redirect("register")
 
 def resend_confirm_email(request):
