@@ -2,39 +2,6 @@ window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribut
 window.historyId = null;
 let chatIDs = [];
 
-async function saveResponse(screen_name, requirement, result) {
-    const chatItem = {
-        screen_name: screen_name.trim(),
-        requirement: requirement.trim(),
-        result: result.trim()
-    };
-
-    try {
-        const saveResponse = await fetch("/save-history/", {  
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken
-            },
-            body: JSON.stringify({ 
-                history_id: historyId,
-                chat: chatItem
-            })
-        });
-
-        if (saveResponse.ok) {
-            const responseData = await saveResponse.json();
-            historyId = responseData.history_id;
-            fetchHistoryList();
-        } else {
-            alert("Lưu thất bại. Hãy thử lại.");
-        }
-    } catch (error) {
-        console.error("Lỗi khi lưu:", error);
-        alert("Có lỗi xảy ra trong quá trình lưu dữ liệu.");
-    }
-}
-
 function addNewItem() {
     document.getElementById("responses").replaceChildren();
     historyId = null;
@@ -72,12 +39,12 @@ async function submitForm(event) {
                 "Content-Type": "application/json",
                 "X-CSRFToken": csrfToken
             },
+            credentials: "include",
             body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
         });
         if (response.ok) {
             const result = await response.json();
             appendMessage("left", result.test_cases, result.screen_name, randomId);
-            saveResponse(screen_name, JSON.stringify(requirement), result.test_cases, );
         } else {
             switch (response.status) {
             case 401:

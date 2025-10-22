@@ -28,6 +28,8 @@ def chatgpt_login_testcase(request):
             screen_name = data.get('screen_name', '')
             requirement = data.get('requirement', '')
 
+            user = getattr(request, "user", None)
+
             prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}'. "
             "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
             "Số thứ tự: <số thứ tự>\n"
@@ -66,8 +68,41 @@ def chatgpt_login_testcase(request):
             if "<!DOCTYPE" in content or "<html>" in content:
                 return JsonResponse({"error": "API returned invalid response"}, status=502)
 
+            # Parse kết quả
             test_cases = parse_test_cases(content)
-            return JsonResponse({"screen_name": screen_name, "test_cases": test_cases})
+
+            # Lưu vào DB nếu user đăng nhập
+            if user and getattr(user, "is_authenticated", False):
+                history = None
+                if history_id:
+                    try:
+                        history = Chat.objects.get(id=history_id)
+                    except Chat.DoesNotExist:
+                        history = Chat.objects.create(title=screen_name, created_by=user)
+                else:
+                    history = Chat.objects.create(title=screen_name, created_by=user)
+
+                ChatDetail.objects.create(
+                    chat_id=history,
+                    screen_name=screen_name,
+                    requirement=requirement,
+                    result=content,  # Lưu toàn văn bản GPT trả về
+                    chat_type=2,
+                    created_by=user
+                )
+
+                return JsonResponse({
+                    "screen_name": screen_name,
+                    "test_cases": test_cases,
+                    "history_id": history.id
+                })
+            else:
+                # Nếu chưa đăng nhập thì chỉ trả về kết quả, không lưu
+                print("User chưa đăng nhập — bỏ qua lưu lịch sử.")
+                return JsonResponse({
+                    "screen_name": screen_name,
+                    "test_cases": test_cases
+                })
 
         except AuthenticationError:
             return JsonResponse({"error": "Sai API key hoặc chưa cấu hình."}, status=401)

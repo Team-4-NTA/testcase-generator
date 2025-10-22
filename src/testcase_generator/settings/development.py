@@ -73,5 +73,5 @@ SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Logging for development
-LOGGING['loggers']['django']['level'] = 'DEBUG'
-LOGGING['loggers']['chatbot']['level'] = 'DEBUG'
+LOGGING['loggers']['django']['level'] = 'WARNING'
+LOGGING['loggers']['chatbot']['level'] = 'WARNING'

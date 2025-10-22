@@ -31,6 +31,7 @@ logging.basicConfig(filename="debug.log", level=logging.DEBUG, encoding="utf-8")
 @csrf_exempt
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('file'):
+        user = getattr(request, "user", None)
         file = request.FILES['file']
         file_extension = file.name.split('.')[-1].lower()
         # Kiểm tra định dạng file
@@ -94,16 +95,17 @@ def upload_file(request):
 
         history_id = request.POST.get('history_id')
         file_path_requiment = file_path.replace(str(settings.BASE_DIR), "").lstrip("/")
-        file_name, file_path_testcase = save_upload(screen_names, data_test_case, history_id, file_path_requiment)
+        if user and getattr(user, "is_authenticated", False):
+            file_name, file_path_testcase = save_upload(screen_names, data_test_case, history_id, file_path_requiment)
 
-        return JsonResponse({
-            "screen_name": next(iter(screen_names.values()), ""),
-            "test_cases": test_cases,
-            "file_name": file_name,
-            "file_path_requiment" : file_path_requiment,
-            "file_path_testcase" : file_path_testcase
-            },
-            status=200)    
+            return JsonResponse({
+                "screen_name": next(iter(screen_names.values()), ""),
+                "test_cases": test_cases,
+                "file_name": file_name,
+                "file_path_requiment" : file_path_requiment,
+                "file_path_testcase" : file_path_testcase
+                },
+                status=200)    
 
     return JsonResponse({'message': 'Không có file nào được tải lên!'}, status=400)
 

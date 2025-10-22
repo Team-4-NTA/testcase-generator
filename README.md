@@ -259,7 +259,6 @@ SECURE_SSL_REDIRECT=True
 | `/generate-template` | POST | Generate SPEC/API templates |
 | `/get-history/` | GET | Get all chat sessions |
 | `/get-chat-list/<id>` | GET | Get chat details for a session |
-| `/save-history/` | POST | Save new chat session |
 | `/delete-history/<id>/` | DELETE | Delete chat session |
 
 ### Example API Usage

@@ -90,7 +90,7 @@ X_FRAME_OPTIONS = 'DENY'
 # Logging for production
 LOGGING['handlers']['file']['filename'] = '/var/log/django/debug.log'
 LOGGING['loggers']['django']['level'] = 'WARNING'
-LOGGING['loggers']['chatbot']['level'] = 'INFO'
+LOGGING['loggers']['chatbot']['level'] = 'WARNING'
 
 # Sentry configuration (if available)
 if os.getenv('SENTRY_DSN'):
