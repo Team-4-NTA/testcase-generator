@@ -93,8 +93,7 @@
                     <img src="{{ user.socialaccount_set.all.0.get_avatar_url|default:'/static/img/default-avatar.png' }}"
                         alt="Avatar" class="w-9 h-9 rounded-full border border-gray-300 object-cover" />
                     <div>
-                        <p class="text-sm font-medium text-gray-800 group-hover:text-black">{{
-                            user.username|default:"Guest" }}</p>
+                        <p class="text-sm font-medium text-gray-800 group-hover:text-black">{{ user.username|default:"Guest" }}</p>
                         <p class="text-xs text-gray-500 truncate w-[140px]">{{ user.email|default:"user@example.com" }}
                         </p>
                     </div>

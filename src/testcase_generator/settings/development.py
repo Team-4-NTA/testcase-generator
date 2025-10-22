@@ -42,7 +42,7 @@ INTERNAL_IPS = [
 ]
 
 # Email backend for development
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Cache configuration for development
 CACHES = {

@@ -10,6 +10,8 @@ urlpatterns = [
     path('login', auth.login_view, name='login'),
     path('logout', auth.logout_view, name='logout'),
     path('accounts/', include('allauth.urls')),
+    path('forgot-password', auth.forgot_password, name='forgot_password'),
+    path('reset-password/<uidb64>/<token>/', auth.reset_password, name='reset_password'),
     path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
     path('export-excel', views.write_test_case_to_excel, name='write_test_case_to_excel'),
     path('export-template', views.write_test_case_to_excel, name='write_template_to_excel'),

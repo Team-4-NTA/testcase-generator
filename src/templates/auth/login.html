@@ -76,11 +76,18 @@
                 </div>
               </div>
 
-              <div class="text-sm mb-4">
-                <div class="flex gap-2 items-center">
-                  <input type="checkbox" id="remember-me" name="remember" />
-                  <label for="remember-me" class="font-medium text-default">Ghi nhớ</label>
+              <div class="flex items-center justify-between text-sm mb-4">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="remember-me" name="remember"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                  <label for="remember-me" class="font-medium text-gray-700 select-none cursor-pointer">
+                    Remember me
+                  </label>
                 </div>
+
+                <a href="/forgot-password" class="text-blue-600 hover:text-blue-800 font-medium">
+                  Quên mật khẩu?
+                </a>
               </div>
 
               <button type="submit" class="auth-form__btn__login">
