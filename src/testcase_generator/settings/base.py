@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'chatbot',
     'core',
+    'admins',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',

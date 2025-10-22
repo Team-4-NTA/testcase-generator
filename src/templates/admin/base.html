@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body>
+    <div class="fixed inset-0 flex overflow-hidden">
+        <!-- Sidebar -->
+        <div class="relative hidden lg:flex flex-col min-h-svh min-w-16 w-(--width) shrink-0 border-r border-gray-200"
+            style="--width: 15%">
+            <div class="h-[64px] shrink-0 flex items-center gap-1.5 px-4">
+                <div class="flex gap-3 items-center text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 14 14">
+                        <path fill="currentColor" fill-rule="evenodd"
+                            d="M11.188 1.045c-.182-.814-1.337-.808-1.513.007l-.017.081a2.15 2.15 0 0 1-1.715 1.674c-.84.149-.84 1.362 0 1.511a2.15 2.15 0 0 1 1.715 1.674l.017.081c.176.815 1.33.821 1.513.007l.022-.095a2.16 2.16 0 0 1 1.72-1.666c.843-.149.843-1.364 0-1.513a2.16 2.16 0 0 1-1.72-1.666zm-9.5.768v3.5h3.5v-3.5zm-1.25-.15a1.1 1.1 0 0 1 1.1-1.1h3.798a1.1 1.1 0 0 1 1.101 1.1v3.798a1.1 1.1 0 0 1-1.1 1.101H1.538a1.1 1.1 0 0 1-1.101-1.1zm1.25 7.15v3.5h3.5v-3.5zm-1.25-.15a1.1 1.1 0 0 1 1.1-1.1h3.798a1.1 1.1 0 0 1 1.101 1.1v3.798c0 .609-.493 1.102-1.1 1.102H1.538a1.1 1.1 0 0 1-1.1-1.103zm8.25 3.65v-3.5h3.5v3.5zm-.15-4.75a1.1 1.1 0 0 0-1.1 1.1v3.798a1.1 1.1 0 0 0 1.1 1.101h3.798a1.1 1.1 0 0 0 1.102-1.1V8.663c0-.608-.493-1.101-1.102-1.101z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="font-semibold">Admin AI</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4 flex-1 overflow-y-auto px-4 py-2 text-gray-600">
+                <nav class="relative flex gap-1.5 [&>div]:min-w-0 flex-col">
+                    <ul class="isolate min-w-0">
+                        <li class="min-w-0 my-0.5">
+                            <a href="#!"
+                                class="hover:bg-gray-200/75 transition rounded-lg group relative w-full flex items-center gap-1.5 font-medium text-sm before:absolute before:z-[-1] before:rounded-md focus:outline-none focus-visible:outline-none flex-row px-2.5 py-1.5 before:inset-y-px before:inset-x-0 before:bg-elevated">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="M6 19h3v-5q0-.425.288-.712T10 13h4q.425 0 .713.288T15 14v5h3v-9l-6-4.5L6 10zm-2 0v-9q0-.475.213-.9t.587-.7l6-4.5q.525-.4 1.2-.4t1.2.4l6 4.5q.375.275.588.7T20 10v9q0 .825-.588 1.413T18 21h-4q-.425 0-.712-.288T13 20v-5h-2v5q0 .425-.288.713T10 21H6q-.825 0-1.412-.587T4 19m8-6.75" />
+                                </svg>
+                                <span class="truncate">Trang chủ</span>
+                            </a>
+                        </li>
+                        <li class="min-w-0 my-0.5">
+                            <a href="#!"
+                                class="bg-gray-200/75 transition text-gray-950 rounded-lg group relative w-full flex items-center gap-1.5 font-medium text-sm before:absolute before:z-[-1] before:rounded-md focus:outline-none focus-visible:outline-none flex-row px-2.5 py-1.5 before:inset-y-px before:inset-x-0 before:bg-elevated">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2">
+                                        <path d="M18 21a8 8 0 0 0-16 0" />
+                                        <circle cx="10" cy="8" r="5" />
+                                        <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
+                                    </g>
+                                </svg>
+                                <span class="truncate">Người dùng</span>
+                            </a>
+                        </li>
+                        <li class="min-w-0 my-0.5">
+                            <a href="#!"
+                                class="hover:bg-gray-200/75 transition rounded-lg group relative w-full flex items-center gap-1.5 font-medium text-sm before:absolute before:z-[-1] before:rounded-md focus:outline-none focus-visible:outline-none flex-row px-2.5 py-1.5 before:inset-y-px before:inset-x-0 before:bg-elevated">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="M7 17h2.1l6-5.95l-2.15-2.15L7 14.85zm8.8-6.65l1.4-1.45l-2.1-2.1l-1.45 1.4zM3 21V3h6.2q.325-.9 1.088-1.45T12 1t1.713.55T14.8 3H21v18zm2-2h14V5H5zm7-14.75q.325 0 .538-.213t.212-.537t-.213-.537T12 2.75t-.537.213t-.213.537t.213.538t.537.212M5 19V5z" />
+                                </svg>
+                                <span class="truncate">Nhật ký</span>
+                                <span class="group ms-auto inline-flex gap-1.5 items-center">
+                                    <span
+                                        class="font-medium inline-flex items-center text-[10px]/3 px-1.5 py-1 gap-1 rounded-sm ring ring-inset ring-gray-200 text-gray-900 bg-gray-100/75 shrink-0">
+                                        <span class="truncate">10</span>
+                                    </span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="min-w-0 my-0.5">
+                            <a href="#!"
+                                class="hover:bg-gray-200/75 transition rounded-lg group relative w-full flex items-center gap-1.5 font-medium text-sm before:absolute before:z-[-1] before:rounded-md focus:outline-none focus-visible:outline-none flex-row px-2.5 py-1.5 before:inset-y-px before:inset-x-0 before:bg-elevated">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="M18 2H6c-1.103 0-2 .897-2 2v17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V4c0-1.103-.897-2-2-2m0 18H6V4h12z" />
+                                    <path fill="currentColor"
+                                        d="M8 6h3v2H8zm5 0h3v2h-3zm-5 4h3v2H8zm5 .031h3V12h-3zM8 14h3v2H8zm5 0h3v2h-3z" />
+                                </svg>
+                                <span class="truncate">Thống kê</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <nav class="relative flex gap-1.5 [&>div]:min-w-0 flex-col mt-auto">
+                    <ul class="isolate min-w-0">
+                        <li class="min-w-0 my-0.5">
+                            <a href="#!"
+                                class="hover:bg-gray-200/75 transition rounded-lg group relative w-full flex items-center gap-1.5 font-medium text-sm before:absolute before:z-[-1] before:rounded-md focus:outline-none focus-visible:outline-none flex-row px-2.5 py-1.5 before:inset-y-px before:inset-x-0 text-muted hover:text-highlighted hover:before:bg-elevated/50 before:transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="m6 18l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z" />
+                                </svg>
+                                <span class="truncate">Phản hồi</span>
+                            </a>
+                        </li>
+                        <li class="min-w-0 my-0.5">
+                            <a href="#!"
+                                class="hover:bg-gray-200/75 transition rounded-lg group relative w-full flex items-center gap-1.5 font-medium text-sm before:absolute before:z-[-1] before:rounded-md focus:outline-none focus-visible:outline-none flex-row px-2.5 py-1.5 before:inset-y-px before:inset-x-0 text-muted hover:text-highlighted hover:before:bg-elevated/50 before:transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11t-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8t-.288-.712T12 7t-.712.288T11 8t.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8" />
+                                </svg>
+                                <span class="truncate">Trợ giúp & Hỗ trợ</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="shrink-0 flex items-center gap-1.5 px-4 py-2 border-t border-gray-200">
+                <button
+                    class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2.5 py-1.5 text-sm gap-2 text-gray-500 hover:bg-elevated active:bg-elevated focus:outline-none focus-visible:bg-elevated hover:disabled:bg-transparent hover:aria-disabled:bg-transparent w-full">
+                    <span
+                        class="inline-flex items-center justify-center select-none rounded-full align-middle bg-elevated size-5 text-[10px] shrink-0">
+                        <img role="img" src="https://placehold.co/100x100" width="20" height="20"
+                            class="h-full w-full rounded-[inherit] object-cover" />
+                    </span>
+                    <span class="truncate"> Ngyễn Văn NTA</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main-->
+        <div class="relative flex flex-col min-w-0 min-h-svh lg:not-last:border-r lg:not-last:border-gray-200 flex-1">
+            <!-- Main header -->
+            <div
+                class="h-[64px] shrink-0 flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 gap-1.5">
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <button
+                        class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors text-sm gap-1.5 text-gray-500 hover:bg-elevated active:bg-elevated focus:outline-none focus-visible:bg-elevated hover:disabled:bg-transparent hover:aria-disabled:bg-transparent p-1.5 lg:hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+                        </svg>
+                    </button>
+                    <h1 class="flex items-center gap-1.5 font-bold text-highlighted truncate uppercase">
+                        Người dùng
+                    </h1>
+                </div>
+                <div class="flex items-center shrink-0 gap-1.5">
+                    <button
+                        class="ring ring-gray-200 rounded-full cursor-pointer shadow font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 text-sm gap-1.5 text-gray-500 hover:bg-gray-200/75 transition active:bg-elevated focus:outline-none focus-visible:bg-elevated hover:disabled:bg-transparent hover:aria-disabled:bg-transparent p-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                            <path fill="currentColor"
+                                d="M12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12q0-2.1.788-3.912t2.137-3.163l1.4 1.4q-1.1 1.1-1.712 2.55T4 12q0 3.35 2.325 5.675T12 20t5.675-2.325T20 12q0-1.675-.612-3.125t-1.713-2.55l1.4-1.4q1.35 1.35 2.138 3.163T22 12q0 2.075-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m-1-9V2h2v11z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Control -->
+            <div
+                class="shrink-0 flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 gap-1.5 overflow-x-auto min-h-[49px] text-gray-600">
+                <nav class="relative flex gap-1.5 [&>div]:min-w-0 items-center justify-between flex-1">
+                    <div class="relative">
+                        <ul class="isolate min-w-0 flex items-center">
+                            <li class="min-w-0 py-2 mr-1">
+                                <a href="#!"
+                                    class="hover:ring hover:ring-gray-200 hover:bg-gray-100/50 px-2 py-1 rounded transition group relative w-full flex items-center gap-1.5 font-medium text-sm text-gray-950">
+                                    <span class="truncate">Danh sách người dùng</span>
+                                </a>
+                            </li>
+                            <li class="min-w-0 py-2">
+                                <a href="#!"
+                                    class="hover:ring hover:ring-gray-200 hover:bg-gray-100/50 px-2 py-1 rounded transition group relative w-full flex items-center gap-1.5 font-medium text-sm hover:text-gray-950">
+                                    <span class="truncate">Phân quyền</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="relative">
+                        <ul class="isolate min-w-0 flex items-center">
+                            <li class="min-w-0 py-2">
+                                <a href="#!"
+                                    class="group relative text-white bg-gray-800 hover:bg-gray-700 rounded p-2 w-full flex items-center gap-1.5 font-medium text-sm">
+                                    <span class="truncate">Thêm mới +</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex flex-col gap-4 sm:gap-6 flex-1 overflow-y-auto p-4 sm:p-6">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Pie Charts
+        const pieChart = document.getElementById('pieChart')
+        new Chart(pieChart, {
+            type: 'pie',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [
+                    {
+                        label: '# of Votes',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Pie Chart',
+                    },
+                },
+            },
+        })
+
+        // Doughnut Chart
+        const doughnutChart = document.getElementById('doughnutChart')
+        new Chart(doughnutChart, {
+            type: 'doughnut',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [
+                    {
+                        label: '# of Votes',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Doughnut Chart',
+                    },
+                },
+            },
+        })
+
+        // Rada Chart
+        const radaChart = document.getElementById('radaChart')
+        new Chart(radaChart, {
+            type: 'radar',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [
+                    {
+                        label: '# of Votes',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Rada Chart',
+                    },
+                },
+            },
+        })
+
+        // Bar Charts
+        const barChart = document.getElementById('barChart')
+        new Chart(barChart, {
+            type: 'bar',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [
+                    {
+                        label: '# of Votes',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Chart js',
+                    },
+                },
+            },
+        })
+
+        // Line Charts
+        const lineCharts = document.getElementById('lineCharts')
+        const DATA_COUNT = 12
+        const labels = []
+        for (let i = 0; i < DATA_COUNT; ++i) {
+            labels.push(i.toString())
+        }
+        const datapoints = [
+            0,
+            20,
+            20,
+            60,
+            60,
+            120,
+            NaN,
+            180,
+            120,
+            125,
+            105,
+            110,
+            170,
+        ]
+
+        new Chart(lineCharts, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Cubic interpolation (monotone)',
+                        data: datapoints,
+                        borderColor: '#fe6989',
+                        fill: false,
+                        cubicInterpolationMode: 'monotone',
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'Cubic interpolation',
+                        data: datapoints,
+                        borderColor: '#4baced',
+                        fill: false,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'Linear interpolation (default)',
+                        data: datapoints,
+                        borderColor: '#4bc0c0',
+                        fill: false,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        })
+    </script>
+</body>
+
+</html>
