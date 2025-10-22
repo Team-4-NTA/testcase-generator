@@ -1,0 +1,81 @@
+{% extends 'auth/base.html' %}
+{% block title %}Login Admin{% endblock %}
+{% load socialaccount %}
+{% block content %}
+<main class="wrapper">
+  <div class="main-content w-100">
+    <div class="main-content__card">
+      <div class="card__wrapper">
+        <div class="card__item">
+          <div class="card__header">
+            <div class="mb-2 mx-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+                <g fill="none" stroke="currentColor" stroke-dasharray="20" stroke-dashoffset="20" stroke-linecap="round"
+                  stroke-linejoin="round" stroke-width="2">
+                  <path d="M6 19v-1c0 -2.21 1.79 -4 4 -4h4c2.21 0 4 1.79 4 4v1">
+                    <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s" values="20;0" />
+                  </path>
+                  <path d="M12 11c-1.66 0 -3 -1.34 -3 -3c0 -1.66 1.34 -3 3 -3c1.66 0 3 1.34 3 3c0 1.66 -1.34 3 -3 3Z">
+                    <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.2s" dur="0.2s" values="20;0" />
+                  </path>
+                </g>
+              </svg>
+            </div>
+            <div class="text-xl text-pretty font-semibold text-highlighted">
+              Đăng nhập
+            </div>
+            <div class="mt-1 text-base text-pretty text-gray-700">
+              Chào mừng bạn đến trang quản trị <br>
+              Vui lòng đăng nhập để tiếp tục
+            </div>
+          </div>
+          <div class="card__content">
+            <!-- Form auth -->
+            <form id="auth-form" class="auth-form" onsubmit="login(event)">
+              {% csrf_token %}
+              <div class="text-sm mb-3">
+                <label for="auth-email" class="auth-form__label">Email</label>
+                <div class="mt-1">
+                  <input id="auth-email" type="email" name="email" placeholder="Nhập email của bạn"
+                    class="auth-form__input" autocomplete="off" />
+                  <p id="error-email" class="text-red-500 text-xs mt-1 hidden"></p>
+                </div>
+              </div>
+
+              <div class="text-sm mb-3">
+                <label for="auth-password" class="auth-form__label">Mật khẩu</label>
+                <div class="mt-1">
+                  <input id="auth-password" type="password" name="password" placeholder="Nhập mật khẩu của bạn"
+                    class="auth-form__input" autocomplete="off" />
+                  <p id="error-password" class="text-red-500 text-xs mt-1 hidden"></p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-sm mb-4">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="remember-me" name="remember"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                  <label for="remember-me" class="font-medium text-gray-700 select-none cursor-pointer">
+                    Remember me
+                  </label>
+                </div>
+
+                <a href="/forgot-password" class="text-blue-600 hover:text-blue-800 font-medium">
+                  Quên mật khẩu?
+                </a>
+              </div>
+
+              <button type="submit" class="auth-form__btn__login">
+                <span class="truncate">Đăng nhập</span>
+              </button>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% load static %}
+<script src="{% static 'js/auth_admin.js' %}"></script>
+{% endblock %}

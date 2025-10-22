@@ -39,7 +39,7 @@ def login_view(request):
         # login user
         login(request, user)
         
-        return JsonResponse({"success": True, "message": "Đăng nhập thành công."})
+    return JsonResponse({"success": True, "message": "Đăng nhập thành công."})
     
 def logout_view(request):
     logout(request) 

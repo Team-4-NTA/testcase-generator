@@ -5,38 +5,55 @@ from django.utils import timezone
 
 
 class Command(BaseCommand):
-    help = "Create user if it does not exist"
-
-    def add_arguments(self, parser):
-        parser.add_argument('--username', type=str, help='Username for the default user', default='test1')
-        parser.add_argument('--email', type=str, help='Email for the default user', default='test@gmail.com')
-        parser.add_argument('--password', type=str, help='Password for the default user', default='Test@1234')
-        parser.add_argument('--is-staff', action='store_true', help='Grant staff status', default=False)
-        parser.add_argument('--is-superuser', action='store_true', help='Grant superuser status', default=False)
+    help = "create default users for testing"
 
     def handle(self, *args, **options):
-        username = options['username']
-        email = options['email']
-        password = options['password']
-        is_staff = options['is_staff']
-        is_superuser = options['is_superuser']
+        users_to_create = [
+            {
+                "username": "admin",
+                "email": "admin@example.com",
+                "password": "Admin@123",
+                "is_staff": True,
+                "is_superuser": True
+            },
+            {
+                "username": "testuser",
+                "email": "testuser@example.com",
+                "password": "Test@1234",
+                "is_staff": False,
+                "is_superuser": False
+            }
+        ]
 
-        # Check if user already exists
-        if User.objects.filter(email=email).exists() or User.objects.filter(username=username).exists():
-            self.stdout.write(self.style.WARNING(f'User with email {email} or username {username} already exists.'))
-            return
+        for user_data in users_to_create:
+            username = user_data["username"]
+            email = user_data["email"]
 
-        # Create user
-        try:
-            User.objects.create(
-                username=username,
-                email=email,
-                password=make_password(password),
-                is_active=True,
-                is_staff=is_staff,
-                is_superuser=is_superuser,
-                date_joined=timezone.now()
-            )
-            self.stdout.write(self.style.SUCCESS(f'Successfully created user: {email}'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error creating user: {str(e)}'))
+            if User.objects.filter(username=username).exists() or User.objects.filter(email=email).exists():
+                self.stdout.write(self.style.WARNING(f'User "{username}" đã tồn tại, bỏ qua.'))
+                continue
+
+            try:
+                if user_data["is_superuser"]:
+                    # Tạo admin
+                    User.objects.create_superuser(
+                        username=username,
+                        email=email,
+                        password=user_data["password"]
+                    )
+                    self.stdout.write(self.style.SUCCESS(f'Đã tạo admin: {username}'))
+                else:
+                    # Tạo user 
+                    User.objects.create(
+                        username=username,
+                        email=email,
+                        password=make_password(user_data["password"]),
+                        is_active=True,
+                        is_staff=user_data["is_staff"],
+                        is_superuser=user_data["is_superuser"],
+                        date_joined=timezone.now()
+                    )
+                    self.stdout.write(self.style.SUCCESS(f'Đã tạo user thường: {username}'))
+
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'Lỗi khi tạo {username}: {str(e)}'))

@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'chatbot',
     'core',
+    'admins',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -40,6 +41,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'admins.middleware.AdminAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'testcase_generator.urls'

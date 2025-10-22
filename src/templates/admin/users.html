@@ -1,0 +1,167 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div>
+    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2">ID</th>
+                    <th class="px-4 py-2">Username</th>
+                    <th class="px-4 py-2">Email</th>
+                    <th class="px-4 py-2">Date Joined</th>
+                    <th class="px-4 py-2">Staff</th>
+                    <th class="px-4 py-2">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in page_obj %}
+                <tr class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-4 py-2">{{ user.id }}</td>
+                    <td class="px-4 py-2 font-medium text-gray-900">{{ user.username }}</td>
+                    <td class="px-4 py-2">{{ user.email }}</td>
+                    <td class="px-4 py-2">{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                    <td class="px-4 py-2">
+                        {% if user.is_staff %}
+                        <span class="text-green-600 font-semibold">Yes</span>
+                        {% else %}
+                        <span class="text-gray-400">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2">
+                        <a href="{% url 'admin:auth_user_change' user.id %}"
+                            class="text-gray-600 hover:underline">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-gray-400">Không có người dùng</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex justify-center mt-5 gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}"
+            class="pagination-link px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">‹ Prev</a>
+        {% endif %}
+        <span class="px-3 py-2 bg-gray-100 rounded">Trang {{ page_obj.number }} / {{ page_obj.num_pages
+            }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"
+            class="pagination-link px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">Next ›</a>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center pt-5">
+        <nav>
+            <ul class="flex flex-wrap items-center justify-center gap-1.5 font-semibold text-gray-700">
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="currentColor"
+                                d="M18.41 7.41L17 6l-6 6l6 6l1.41-1.41L13.83 12zm-6 0L11 6l-6 6l6 6l1.41-1.41L7.83 12z" />
+                        </svg>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="m14 18l-6-6l6-6l1.4 1.4l-4.6 4.6l4.6 4.6z" />
+                        </svg>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <span>1</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <span>...</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <span>4</span>
+                    </a>
+                </li>
+
+                <li>
+                    <button
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-gray-800 text-white transition">
+                        <span>5</span>
+                    </button>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <span>6</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <span>...</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <span>10</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M12.6 12L8 7.4L9.4 6l6 6l-6 6L8 16.6z" />
+                        </svg>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#!"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="currentColor"
+                                d="M5.59 7.41L7 6l6 6l-6 6l-1.41-1.41L10.17 12zm6 0L13 6l6 6l-6 6l-1.41-1.41L16.17 12z" />
+                        </svg>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<div class="border-t border-8 border-gray-200"></div>
+<script>
+    document.addEventListener("click", function (e) {
+        if (e.target.classList.contains("pagination-link")) {
+            e.preventDefault();
+            const url = e.target.getAttribute("href");
+
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(res => res.json())
+                .then(data => {
+                    document.querySelector("#user-table").innerHTML = data.html;
+                });
+        }
+    });
+</script>
+{% endblock %}
