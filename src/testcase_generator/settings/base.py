@@ -41,6 +41,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'admins.middleware.AdminAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'testcase_generator.urls'
