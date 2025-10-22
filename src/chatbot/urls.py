@@ -12,6 +12,7 @@ urlpatterns = [
     path('forgot-password', auth.forgot_password, name='forgot_password'),
     path('reset-password/<uidb64>/<token>/', auth.reset_password, name='reset_password'),
     path('register', auth.register, name='register'),
+    path('resend-confirm-email/', confirm_email.resend_confirm_email, name='resend_confirm_email'),
     path("activate/<uidb64>/<token>/", confirm_email.activate, name="activate"),
     path('', views.chatgpt_login_testcase, name='chatgpt_login_testcase'),
     path('export-excel', views.write_test_case_to_excel, name='write_test_case_to_excel'),

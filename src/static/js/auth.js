@@ -1,4 +1,5 @@
 window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+let emailReset = "";
 
 async function login(event) {
     event.preventDefault();
@@ -47,7 +48,7 @@ async function login(event) {
     const data = await response.json();
     if (data.success) {
         localStorage.setItem('loginSuccess', 'Đăng nhập thành công!');
-        window.location.href = "/"; 
+        window.location.href = "/";
     } else {
         showAlert('error', data.message);
     }
@@ -123,9 +124,25 @@ async function resetPassword(event) {
   }
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    const messagesDiv = document.getElementById("django-messages");
+    if (!messagesDiv) return;
+
+    const messages = messagesDiv.querySelectorAll(".message");
+    messages.forEach(msg => {
+        const text = msg.textContent.trim();
+        const type = msg.dataset.tag || "info";
+
+        if (type === "success") {
+            showAlert('success', 'Đăng ký thành công');
+        } else if (type === "error") {
+            showAlert("error", text);
+        }
+    });
+});
+
 async function register(event) {
     event.preventDefault();
-
     const firstname = document.getElementById("register-firstname").value.trim();
     const lastname = document.getElementById("register-lastname").value.trim();
     const username = document.getElementById("register-username").value.trim();
@@ -225,21 +242,87 @@ async function register(event) {
 
         if (!response.ok) {
             const errData = await response.json();
-            alert("Đăng ký thất bại: " + (errData.message || "Có lỗi xảy ra"));
+            showAlert("error", (errData.message || "Có lỗi xảy ra"));
             return;
         }
 
         const data = await response.json();
-        alert("Đăng ký thành công!");
+        showVerifyModal(email);
 
         if (data.token) {
             localStorage.setItem("token", data.token);
         }
-
-        window.location.href = "/login";
-
     } catch (error) {
         console.error(error);
-        alert("Có lỗi xảy ra: " + error.message);
     }
 }
+
+function resendVerifyEmail() {
+    const resendBtn = document.getElementById("resend-email");
+    console.log(emailReset);
+    console.log(JSON.stringify({ emailReset }));
+
+    if (!emailReset) {
+        showAlert("error", "Email không hợp lệ.");
+        return;
+    }
+
+    // Disable button để tránh click nhiều lần
+    resendBtn.disabled = true;
+    resendBtn.textContent = "Đang gửi...";
+
+    fetch("/resend-confirm-email/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": window.csrfToken
+        },
+        body: JSON.stringify({ emailReset })
+    })
+        .then(res => res.json())
+        .then(data => {
+            showAlert(data.success ? 'success' : 'error', data.message);
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert("error", "Đã xảy ra lỗi, vui lòng thử lại sau.");
+        })
+        .finally(() => {
+            resendBtn.disabled = false;
+            resendBtn.textContent = "Resend Verification Email";
+        });
+}
+
+function showVerifyModal(email) {
+    const modal = document.getElementById("verify-modal");
+    const emailEl = document.getElementById("modal-email");
+    const closeBtn = document.getElementById("modal-close");
+
+    emailEl.textContent = email;
+    emailReset = email;
+
+    modal.classList.remove("hidden");
+
+    closeBtn.addEventListener("click", () => {
+        modal.classList.add("hidden");
+    });
+}
+
+// Close modal
+document.getElementById("modal-close").addEventListener("click", () => {
+    document.getElementById("verify-modal").classList.add("hidden");
+});
+
+// Optional: click outside modal to close
+document.getElementById("verify-modal").addEventListener("click", (e) => {
+    if (e.target.id === "verify-modal") {
+        e.currentTarget.classList.add("hidden");
+    }
+});
+
+// Nút Resend Email
+document.getElementById("resend-email").addEventListener("click", () => {
+    // Gọi API resend email
+    console.log("Resend email clicked");
+    resendVerifyEmail()
+});

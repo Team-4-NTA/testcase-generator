@@ -1,7 +1,7 @@
 {% extends 'auth/base.html' %}
 {% block title %}Register{% endblock %}
 {% block content %}
-<main class="wrapper">
+<main class="wrapper relative">
     <div class="main-content">
         <div class="main-content__card">
             <div class="card__wrapper">
@@ -59,7 +59,7 @@
                         </div>
 
                         <!-- Form auth -->
-                        <form id="register-form" class="auth-form" onsubmit="register(event)">
+                        <form id="register-form" class="auth-form" onsubmit="register(event)" method="post">
                             <div class="text-sm">
                                 <label for="register-firstname" class="auth-form__label">
                                     First Name
