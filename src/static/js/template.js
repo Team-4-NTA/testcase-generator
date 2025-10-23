@@ -4,7 +4,7 @@ async function createTemplate() {
     const selected = document.querySelector('input[name="fav_language"]:checked');
 
     if (!screen_name || !selected) {
-        alert("Vui lòng nhập đầy đủ thông tin!");
+        showAlert('error', "Vui lòng nhập đầy đủ thông tin!");
         return;
     }
 
@@ -27,8 +27,8 @@ async function createTemplate() {
             body: JSON.stringify({ screen_name: screen_name, requirement: JSON.stringify(requirement), type: selected.value, history_id: window.historyId })
         });
         if (response.ok) {
+            await window.fetchHistoryList();
             const result = await response.json();
-
             const randomId = Date.now();
 
             // Hiển thị bảng Spec
@@ -62,7 +62,7 @@ async function createTemplate() {
         }
     } catch (error) {
         console.error("Lỗi:", error);
-        alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
+        showAlert('error', "Có lỗi xảy ra trong quá trình gửi dữ liệu.");
     }
 }
 
