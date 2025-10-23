@@ -86,9 +86,9 @@ def chatgpt_login_testcase(request):
                     chat_id=history,
                     screen_name=screen_name,
                     requirement=requirement,
-                    result=content,  # Lưu toàn văn bản GPT trả về
+                    result=test_cases,
                     chat_type=2,
-                    url_requirement="",  # nếu chưa có URL, để trống hoặc None
+                    url_requirement="",
                     url_result="",
                 )
 
