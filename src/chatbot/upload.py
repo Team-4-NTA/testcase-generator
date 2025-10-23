@@ -31,7 +31,7 @@ logging.basicConfig(filename="debug.log", level=logging.DEBUG, encoding="utf-8")
 @csrf_exempt
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('file'):
-        user = getattr(request, "user", None)
+        user = request.user
         file = request.FILES['file']
         file_extension = file.name.split('.')[-1].lower()
         # Kiểm tra định dạng file
@@ -95,8 +95,8 @@ def upload_file(request):
 
         history_id = request.POST.get('history_id')
         file_path_requiment = file_path.replace(str(settings.BASE_DIR), "").lstrip("/")
-        if user and getattr(user, "is_authenticated", False):
-            file_name, file_path_testcase = save_upload(screen_names, data_test_case, history_id, file_path_requiment)
+        if user and user.is_authenticated:
+            file_name, file_path_testcase = save_upload(screen_names, data_test_case, history_id, file_path_requiment, user)
 
             return JsonResponse({
                 "screen_name": next(iter(screen_names.values()), ""),
@@ -379,7 +379,7 @@ def write_test_case_to_excel(screen_names, test_cases_json):
         return None
 
 @csrf_exempt
-def save_upload(screen_names, chat_data, history_id, url):
+def save_upload(screen_names, chat_data, history_id, url, user):
     file_path, file_name = write_test_case_to_excel(screen_names, chat_data)
     file_path = file_path.replace(str(settings.BASE_DIR), "").lstrip("/")
     first_screen_name = next(iter(screen_names.values()), "")
@@ -390,12 +390,12 @@ def save_upload(screen_names, chat_data, history_id, url):
 
     history = None
     if not history_id or history_id.lower() == 'null': 
-        history = Chat.objects.create(title=first_screen_name)
+        history = Chat.objects.create(title=first_screen_name, user=user)
     else:
         try:
             history = Chat.objects.get(id=history_id)
-        except FileNotFoundError:
-            raise ValueError("History not found.")
+        except Chat.DoesNotExist:
+            history = Chat.objects.create(title=first_screen_name, user=user)
     chat = ChatDetail.objects.create(
         chat_id=history,  
         screen_name=first_screen_name,

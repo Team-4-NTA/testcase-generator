@@ -1,9 +1,9 @@
 window.addEventListener('DOMContentLoaded', () => {
-    const message = localStorage.getItem('loginSuccess');
-    if (message) {
-      showAlert('success', message);
-      localStorage.removeItem('loginSuccess');
-    }
+  const message = localStorage.getItem('loginSuccess');
+  if (message) {
+    showAlert('success', message);
+    localStorage.removeItem('loginSuccess');
+  }
 });
 
 function showAlert(type, message) {

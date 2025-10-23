@@ -27,8 +27,9 @@ def chatgpt_login_testcase(request):
             data = json.loads(request.body)
             screen_name = data.get('screen_name', '')
             requirement = data.get('requirement', '')
+            history_id = data.get('history_id', '')
 
-            user = getattr(request, "user", None)
+            user = request.user
 
             prompt = (f"Tạo test case cho màn hình {screen_name} với yêu cầu '{requirement}'. "
             "Liệt kê các trường hợp kiểm thử theo định dạng sau:\n"
@@ -72,15 +73,14 @@ def chatgpt_login_testcase(request):
             test_cases = parse_test_cases(content)
 
             # Lưu vào DB nếu user đăng nhập
-            if user and getattr(user, "is_authenticated", False):
-                history = None
+            if user and user.is_authenticated:
                 if history_id:
                     try:
                         history = Chat.objects.get(id=history_id)
                     except Chat.DoesNotExist:
-                        history = Chat.objects.create(title=screen_name, created_by=user)
+                        history = Chat.objects.create(title=screen_name, user=user)
                 else:
-                    history = Chat.objects.create(title=screen_name, created_by=user)
+                    history = Chat.objects.create(title=screen_name, user=user)
 
                 ChatDetail.objects.create(
                     chat_id=history,
@@ -88,7 +88,8 @@ def chatgpt_login_testcase(request):
                     requirement=requirement,
                     result=content,  # Lưu toàn văn bản GPT trả về
                     chat_type=2,
-                    created_by=user
+                    url_requirement="",  # nếu chưa có URL, để trống hoặc None
+                    url_result="",
                 )
 
                 return JsonResponse({
@@ -172,56 +173,17 @@ def get_chat_list(request, history_id):
         return JsonResponse({"error": "History not found"}, status=404)
 
 def get_history(request):
-    histories = Chat.objects.all().values("id", "title", "created_at").distinct()
+    if not request.user.is_authenticated:
+        return JsonResponse([], safe=False)
+
+    histories = (
+        Chat.objects
+        .filter(user=request.user)
+        .values("id", "title", "created_at")
+        .distinct()
+        .order_by("-created_at")
+    )
     return JsonResponse(list(histories), safe=False)
-
-@csrf_exempt
-def save_history(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            history_id = data.get('history_id')
-            chat_data = data.get('chat')
-
-            if not chat_data:
-                return JsonResponse({"error": "No chats provided."}, status=400)
-
-            chat_objects = []
-
-            # Nếu có history_id, kiểm tra xem Chat có tồn tại không
-            history = None
-            if history_id:
-                try:
-                    history = Chat.objects.get(id=history_id)
-                except Chat.DoesNotExist:
-                    return JsonResponse({"error": "History not found."}, status=404)
-            else:
-                # Nếu không có history_id, tạo mới Chat
-                history = Chat.objects.create(title=chat_data['screen_name'])
-
-            # Tạo ChatDetail và liên kết với Chat
-            screen_name = chat_data.get('screen_name')
-            requirement = chat_data.get('requirement')
-            result = chat_data.get('result')
-
-            chat = ChatDetail.objects.create(
-                chat_id=history,  
-                screen_name=screen_name,
-                requirement=requirement,
-                result=result,
-                chat_type=2,  # Bắt buộc phải có
-                url_requirement=chat_data.get('url_requirement', ''),  # Tránh lỗi None
-                url_result=chat_data.get('url_result', '') 
-            )
-
-            chat_objects.append(chat)
-            return JsonResponse({"success": True, "history_id": history.id})
-
-        except Exception as e:
-            print("Error:", e)
-            return JsonResponse({"error": f"There was an error saving the history: {str(e)}"}, status=500)
-    else:
-        return JsonResponse({"error": "Invalid method."}, status=405)
 
 @csrf_exempt
 def delete_history(request, history_id):

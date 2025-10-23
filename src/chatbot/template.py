@@ -32,7 +32,7 @@ def generate_template(request):
         requirement = data.get("requirement")
         type = data.get("type")
         history_id = data.get('history_id')
-        user = getattr(request, "user", None)
+        user = request.user
 
         if type == "spec":
             template_data = generate_spec_data(data)
@@ -47,8 +47,8 @@ def generate_template(request):
             )
 
         file_path = str(file_path).replace(str(settings.BASE_DIR), "").lstrip("/")
-        if user and getattr(user, "is_authenticated", False):
-            save_template(file_path, file_name, screen_name, requirement, history_id)
+        if user and user.is_authenticated:
+            save_template(file_path, file_name, screen_name, requirement, history_id, user)
 
         return JsonResponse({
             "screen_name": screen_name,
@@ -420,17 +420,17 @@ def create_excel_file_api(screen_name: str, api_data: dict):
             os.remove(output_path)
         raise RuntimeError(f"Failed to process Excel file: {str(e)}")
 
-def save_template(file_path, file_name, screen_name, requirement, history_id):
+def save_template(file_path, file_name, screen_name, requirement, history_id, user):
     chat_objects = []
 
     history = None
     if not history_id: 
-        history = Chat.objects.create(title=screen_name)
+        history = Chat.objects.create(title=screen_name, user=user)
     else:
         try:
             history = Chat.objects.get(id=history_id)
-        except FileNotFoundError:
-            raise ValueError("History not found.")
+        except Chat.DoesNotExist:
+            history = Chat.objects.create(title=screen_name, user=user)
     chat = ChatDetail.objects.create(
         chat_id=history,  
         screen_name=screen_name,
