@@ -49,7 +49,7 @@ async function login(event) {
     const data = await response.json();
     if (data.success) {
         localStorage.setItem('loginSuccess', 'Đăng nhập thành công!');
-        window.location.href = "users";
+        window.location.href = "/admin/dashboard";
     } else {
         showAlert('error', data.message);
     }

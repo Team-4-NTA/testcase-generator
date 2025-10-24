@@ -7,13 +7,15 @@ from django.db.models import Count
 from datetime import timedelta
 
 def index(request):
-    total_users = User.objects.count() 
-    total_users_active = User.objects.filter(is_active=True).count()
-    total_ai_request = ChatDetail.objects.count() 
     now = timezone.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     tomorrow_start = today_start + timedelta(days=1)
     start_of_month = now.replace(day=1, hour=0, minute=0, second=0)
+    one_month_ago = timezone.now() - timedelta(days=30)
+
+    total_users = User.objects.count() 
+    total_users_active = User.objects.filter(is_active=True).count()
+    total_ai_request = ChatDetail.objects.count() 
     testcases_this_month = ChatDetail.objects.filter(created_at__gte=start_of_month).count()
     user_logins_today = User.objects.filter(
         last_login__gte=today_start,
@@ -22,7 +24,8 @@ def index(request):
 
     # Nhóm theo ngày tạo
     testcases_over_time = (
-        ChatDetail.objects.annotate(date=TruncDate('created_at'))
+    ChatDetail.objects.filter(created_at__gte=one_month_ago)
+        .annotate(date=TruncDate('created_at'))
         .values('date')
         .annotate(total=Count('id'))
         .order_by('date')
