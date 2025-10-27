@@ -91,6 +91,9 @@
                     {% if user.socialaccount_set.all|length > 0 and user.socialaccount_set.all.0.get_avatar_url %}
                     <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" alt="Avatar"
                         class="w-9 h-9 rounded-full border border-gray-300 object-cover" />
+                    {% elif user.userdetail.avatar %}
+                    <img role="img" src="{{ user.userdetail.avatar.url }}" alt="Avatar"
+                        class="w-9 h-9 rounded-full border border-gray-300 object-cover"/>
                     {% else %}
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
                         viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE -->
