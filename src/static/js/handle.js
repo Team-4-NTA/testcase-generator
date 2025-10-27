@@ -10,7 +10,7 @@ function handleFileChange(input) {
         const fileExtension = fileName.split('.').pop().toLowerCase();
 
         if (!allowedExtensions.includes(fileExtension)) {
-            alert('Vui lòng chọn file Excel (xlsx, xls)!');
+            showAlert('error', 'Vui lòng chọn file Excel (xlsx, xls)!');
             return;
         }
         const msgHTML = `
@@ -64,11 +64,11 @@ async function uploadExcel(file) {
             headers: {
                 "X-CSRFToken": window.csrfToken
             },
+            credentials: "include",
             body: formData
         });
         const result = await response.json();
         text = result.test_cases;
-        
         if (!response.ok) {
             let errorMessage = `Lỗi ${response.status}: ${response.statusText}`;
             try {
@@ -78,9 +78,10 @@ async function uploadExcel(file) {
             } catch (jsonError) {
                 console.error("Không thể đọc lỗi JSON:", jsonError);
             }
-            alert(errorMessage);
+            showAlert('error', errorMessage);
             return;
         }
+        await window.fetchHistoryList();
         const loadingEl = document.getElementById("loading-spinner");
         if (loadingEl) {
             loadingEl.remove();
@@ -107,6 +108,6 @@ async function uploadExcel(file) {
         document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
     } catch (error) {
         console.error('Error:', error);
-        alert(error);
+        showAlert('error', error);
     }
 }

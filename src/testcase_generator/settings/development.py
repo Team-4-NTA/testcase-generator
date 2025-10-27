@@ -15,7 +15,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web', 'django_app', '0.0.0.0', 'gene
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'mysql.connector.django',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('DATABASE_NAME', 'create_testcase_ai'),
         'HOST': os.getenv('DATABASE_HOST', 'mysql_db'),
         'USER': os.getenv('DATABASE_USER', 'create_testcase_ai'),
@@ -42,7 +42,7 @@ INTERNAL_IPS = [
 ]
 
 # Email backend for development
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Cache configuration for development
 CACHES = {
@@ -73,5 +73,5 @@ SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Logging for development
-LOGGING['loggers']['django']['level'] = 'DEBUG'
-LOGGING['loggers']['chatbot']['level'] = 'DEBUG'
+LOGGING['loggers']['django']['level'] = 'WARNING'
+LOGGING['loggers']['chatbot']['level'] = 'WARNING'

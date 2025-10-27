@@ -2,39 +2,6 @@ window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribut
 window.historyId = null;
 let chatIDs = [];
 
-async function saveResponse(screen_name, requirement, result) {
-    const chatItem = {
-        screen_name: screen_name.trim(),
-        requirement: requirement.trim(),
-        result: result.trim()
-    };
-
-    try {
-        const saveResponse = await fetch("/save-history/", {  
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken
-            },
-            body: JSON.stringify({ 
-                history_id: historyId,
-                chat: chatItem
-            })
-        });
-
-        if (saveResponse.ok) {
-            const responseData = await saveResponse.json();
-            historyId = responseData.history_id;
-            fetchHistoryList();
-        } else {
-            alert("Lưu thất bại. Hãy thử lại.");
-        }
-    } catch (error) {
-        console.error("Lỗi khi lưu:", error);
-        alert("Có lỗi xảy ra trong quá trình lưu dữ liệu.");
-    }
-}
-
 function addNewItem() {
     document.getElementById("responses").replaceChildren();
     historyId = null;
@@ -56,7 +23,7 @@ async function submitForm(event) {
     const requirement = document.getElementById("requirement").value;
 
     if (!screen_name || !requirement) {
-        alert("Vui lòng nhập đầy đủ thông tin!");
+        showAlert('error', "Vui lòng nhập đầy đủ thông tin!");
         return;
     }
 
@@ -72,51 +39,58 @@ async function submitForm(event) {
                 "Content-Type": "application/json",
                 "X-CSRFToken": csrfToken
             },
-            body: JSON.stringify({ screen_name: screen_name, requirement: requirement })
+            credentials: "include",
+            body: JSON.stringify({ screen_name: screen_name, requirement: requirement, history_id: window.historyId })
         });
         if (response.ok) {
             const result = await response.json();
             appendMessage("left", result.test_cases, result.screen_name, randomId);
-            saveResponse(screen_name, JSON.stringify(requirement), result.test_cases, );
+            fetchHistoryList();
         } else {
             switch (response.status) {
-            case 401:
-                console.error("❌ 401 Unauthorized: API key không hợp lệ hoặc chưa cấu hình.");
-                appendMessage("left", "API key không hợp lệ hoặc chưa cấu hình.", "System", randomId);
-                break;
-            case 400:
-                console.error("❌ 400 Bad Request: Yêu cầu không hợp lệ.");
-                appendMessage("left", "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu gửi lên.", "System", randomId);
-                break;
-            case 429:
-                console.error("❌ 429 Too Many Requests: Vượt quá giới hạn sử dụng API.");
-                appendMessage("left", "Bạn đã vượt quá giới hạn sử dụng API. Vui lòng thử lại sau.", "System", randomId);
-                break;
-            case 503:
-                console.error("❌ 503 Service Unavailable: OpenAI đang gặp sự cố.");
-                appendMessage("left", "Dịch vụ OpenAI hiện đang gặp sự cố. Vui lòng thử lại sau.", "System", randomId);
-                break;
-            case 500:
-                console.error("❌ 500 Internal Server Error");
-                appendMessage("left", "Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau.", "System", randomId);
-                break;
-            default:
-                console.error(`❌ Lỗi ${response.status}: ${response.statusText}`);
-                appendMessage("left", `Lỗi ${response.status}: ${response.statusText}`, "System", randomId);
+                case 401:
+                    console.error("❌ 401 Unauthorized: API key không hợp lệ hoặc chưa cấu hình.");
+                    appendMessage("left", "API key không hợp lệ hoặc chưa cấu hình.", "System", randomId);
+                    break;
+                case 400:
+                    console.error("❌ 400 Bad Request: Yêu cầu không hợp lệ.");
+                    appendMessage("left", "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu gửi lên.", "System", randomId);
+                    break;
+                case 429:
+                    console.error("❌ 429 Too Many Requests: Vượt quá giới hạn sử dụng API.");
+                    appendMessage("left", "Bạn đã vượt quá giới hạn sử dụng API. Vui lòng thử lại sau.", "System", randomId);
+                    break;
+                case 503:
+                    console.error("❌ 503 Service Unavailable: OpenAI đang gặp sự cố.");
+                    appendMessage("left", "Dịch vụ OpenAI hiện đang gặp sự cố. Vui lòng thử lại sau.", "System", randomId);
+                    break;
+                case 500:
+                    console.error("❌ 500 Internal Server Error");
+                    appendMessage("left", "Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau.", "System", randomId);
+                    break;
+                default:
+                    console.error(`❌ Lỗi ${response.status}: ${response.statusText}`);
+                    appendMessage("left", `Lỗi ${response.status}: ${response.statusText}`, "System", randomId);
             }
         }
     } catch (error) {
         console.error("Lỗi:", error);
-        alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
+        showAlert('error', "Có lỗi xảy ra trong quá trình gửi dữ liệu.");
     }
 }
 
-async function fetchHistoryList() {
+window.fetchHistoryList = async function () {
     const sidebarList = document.getElementById("sidebar-list");
     sidebarList.innerHTML = "";
 
     try {
-        const response = await fetch("/get-history/");
+        const response = await fetch("/get-history/", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        });
         const histories = await response.json();
         const uniqueHistories = histories.filter(
             (item, index, self) => index === self.findIndex((t) => t.id === item.id)
@@ -174,16 +148,16 @@ async function loadChats(id) {
             historyId = id;
             displayChats(chats);
         } else {
-            alert("Không thể tải lịch sử trò chuyện.");
+            showAlert('error', "Không thể tải lịch sử trò chuyện.");
         }
     } catch (error) {
         console.error("Error fetching chat history:", error);
-        alert("Có lỗi xảy ra khi tải lịch sử.");
+        showAlert('error', "Có lỗi xảy ra khi tải lịch sử.");
     }
 }
 
 function displayChats(chats) {
-    const responsesContainer = document.getElementById("responses"); 
+    const responsesContainer = document.getElementById("responses");
 
     responsesContainer.innerHTML = '';
 
@@ -195,7 +169,7 @@ function displayChats(chats) {
             if (chat.url_result.toLowerCase().includes("spec")) {
                 fileTitle = `Template spec của màn hình chức năng "${chat.screen_name}"`;
             } else if (chat.url_result.toLowerCase().includes("api")) {
-                 fileTitle = `Template api của màn hình chức năng "${chat.screen_name}"`;
+                fileTitle = `Template api của màn hình chức năng "${chat.screen_name}"`;
             }
             const msgHTML = `
                 <div class="msg-container space-y-[20px]">
@@ -220,7 +194,7 @@ function displayChats(chats) {
                 </div>`;
 
             document.getElementById("responses").insertAdjacentHTML("beforeend", msgHTML);
-        } else if (chat.url_requirement !== null && chat.url_requirement !== "" && chat.url_result !== null && chat.url_result !== "") {      
+        } else if (chat.url_requirement !== null && chat.url_requirement !== "" && chat.url_result !== null && chat.url_result !== "") {
             const url_requirement = chat.url_requirement.split("/").pop() ?? "hhhhh";
             const url_result = chat.url_result.split("/").pop();
             const msgHTML = `
@@ -306,14 +280,12 @@ function displayChats(chats) {
             if (typeof chat.result === "string") {
                 try {
                     testCases = JSON.parse(chat.result);
-                    console.log("✅ Đã parse JSON thành mảng:", testCases);
                 } catch (error) {
                     console.error("❌ Lỗi khi parse JSON:", error);
                     testCases = [];
                 }
             } else if (Array.isArray(chat.result)) {
                 testCases = chat.result;
-                console.log("✅ Result đã là mảng hợp lệ:", testCases);
             } else {
                 console.error("❌ Dữ liệu result không hợp lệ:", chat.result);
                 testCases = [];
@@ -356,10 +328,10 @@ async function appendMessage(side, text, screen_name, id) {
     let lastRightId = `msg-container-${id}`;
 
     if (side === "right") {
-        const formatted = 
-            text.replace(/^"(.*)"$/, "$1") 
-            .replace(/\\n/g, "\n")     
-            .replace(/\n/g, "<br>");
+        const formatted =
+            text.replace(/^"(.*)"$/, "$1")
+                .replace(/\\n/g, "\n")
+                .replace(/\n/g, "<br>");
         msgHTML = `<div id="${lastRightId}" class="msg-container space-y-[20px]">
                 <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
                     <div class="absolute top-1 right-2 text-[11px] text-gray-400">
@@ -384,12 +356,10 @@ async function appendMessage(side, text, screen_name, id) {
         if (typeof text === "string") {
             try {
                 testParse = JSON.parse(text);
-                console.log("✅ JSON đã được parse:", testParse);
-                console.log("✅ Text:", text);
             } catch (error) {
                 console.error("❌ Lỗi parse JSON:", error);
             }
-        }      
+        }
         if (container) {
             msgHTML = `
                 <div class="msg left-msg bg-white">
@@ -433,15 +403,15 @@ async function appendMessage(side, text, screen_name, id) {
 
                     const cells = tr.querySelectorAll("td");
                     const values = [
-                        row.id, row.priority, row.type, row.goal, 
-                        row.test_data, row.condition, row.steps, 
+                        row.id, row.priority, row.type, row.goal,
+                        row.test_data, row.condition, row.steps,
                         row.expected_result, row.note
                     ];
-                    
+
                     values.forEach((val, i) => {
                         allTypingPromises.push(typeText(cells[i], val));
                     });
-                    
+
                     index++;
                     setTimeout(addRow, 1000);
                 } else {
@@ -472,7 +442,7 @@ async function appendMessage(side, text, screen_name, id) {
                 });
             }
 
-            setTimeout(addRow, 1000);     
+            setTimeout(addRow, 1000);
         } else {
             setLoadingState(false);
             console.error(`Container với id "${lastRightId}" không tìm thấy.`);
@@ -515,7 +485,7 @@ function isValidJSON(text) {
 }
 
 function tableInnerHTML(id) {
-  return `
+    return `
     <div class="msg-text overflow-x-auto">
       <table class="min-w-[1600px] border border-gray-300 text-sm text-left">
         <thead class="bg-gray-100">
@@ -538,9 +508,9 @@ function tableInnerHTML(id) {
 }
 
 function rigthInnerHTML(chat) {
-    const formatted = 
-            chat.requirement.replace(/^"(.*)"$/, "$1") 
-            .replace(/\\n/g, "\n")     
+    const formatted =
+        chat.requirement.replace(/^"(.*)"$/, "$1")
+            .replace(/\\n/g, "\n")
             .replace(/\n/g, "<br>");
     if (chat.url_result && !chat.url_requirement) {
         const type = chat.url_result.includes('_spec') ? 'spec' : 'api';
@@ -619,10 +589,10 @@ async function deleteHistory(history_id, event) {
         });
 
         if (response.ok) {
-            alert("xóa lịch sử thành công");
+            showAlert('success', "xóa lịch sử thành công");
             addNewItem();
         } else {
-            alert("Lỗi khi xóa lịch sử.");
+            showAlert('error', "Lỗi khi xóa lịch sử.");
         }
     } catch (error) {
         console.error("Lỗi khi xóa lịch sử:", error);
@@ -652,11 +622,11 @@ async function exportExcel(testCase, screen_name) {
         } else {
             const errorData = await response.json();
             console.error("Error response:", errorData);
-            alert("Có lỗi xảy ra khi export: " + errorData.error);
+            showAlert('error', "Có lỗi xảy ra khi export: " + errorData.error);
         }
     } catch (error) {
         console.error("Error export:", error);
-        alert("Có lỗi xảy ra khi export");
+        showAlert('error', "Có lỗi xảy ra khi export");
     }
 }
 

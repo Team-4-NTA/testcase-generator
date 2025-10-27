@@ -1,0 +1,126 @@
+{% extends 'admin/base.html' %}
+{% block header %}Dashboard{% endblock %}
+{% block content %}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <!-- Total Users Card -->
+    <div class="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex items-center justify-between">
+            <div class="text-blue-500 text-4xl w-1/2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 24 24">
+                    <path fill="currentColor"
+                        d="M12 12q-1.65 0-2.825-1.175T8 8t1.175-2.825T12 4t2.825 1.175T16 8t-1.175 2.825T12 12m-8 8v-2.8q0-.85.438-1.562T5.6 14.55q1.55-.775 3.15-1.162T12 13t3.25.388t3.15 1.162q.725.375 1.163 1.088T20 17.2V20z" />
+                </svg>
+            </div>
+            <div class="w-1/2">
+                <h4 class="text-xl font-medium">Total Users</h4>
+                <div class="flex items-end mt-3">
+                    <span class="text-5xl font-bold text-gray-800">{{ total_users_active }}</span>
+                    <span class="text-lg text-green-500 font-semibold ml-2 mb-1">active</span>
+                    <span class="text-gray-400 text-xl mx-1 mb-1">/</span>
+                    <span class="text-3xl font-semibold text-gray-500 mb-1">{{ total_users }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Users Login Today -->
+    <div class="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex items-center justify-between">
+            <div class="text-green-500 text-4xl w-1/2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 24 24">
+                    <path fill="currentColor"
+                        d="m17.55 9.175l3.525-3.55q.3-.3.713-.3t.712.3t.3.713t-.3.712l-4.25 4.25q-.3.3-.7.3t-.7-.3l-2.125-2.125q-.3-.3-.3-.712t.3-.713t.7-.3t.7.3zM9 12q-1.65 0-2.825-1.175T5 8t1.175-2.825T9 4t2.825 1.175T13 8t-1.175 2.825T9 12m-8 6v-.8q0-.85.438-1.562T2.6 14.55q1.55-.775 3.15-1.162T9 13t3.25.388t3.15 1.162q.725.375 1.163 1.088T17 17.2v.8q0 .825-.587 1.413T15 20H3q-.825 0-1.412-.587T1 18" />
+                </svg>
+            </div>
+            <div class="w-1/2">
+                <h4 class="text-xl font-medium">User Login Today</h4>
+                <p class="text-5xl font-bold">{{ user_logins_today }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total AI Request Card -->
+    <div class="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex items-center justify-between">
+            <div class="text-white-500 text-4xl w-1/2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 48 48">
+                    <path fill="none" stroke="currentColor" stroke-linejoin="round"
+                        d="M18.38 27.94v-14.4l11.19-6.46c6.2-3.58 17.3 5.25 12.64 13.33" />
+                    <path fill="none" stroke="currentColor" stroke-linejoin="round"
+                        d="m18.38 20.94l12.47-7.2l11.19 6.46c6.2 3.58 4.1 17.61-5.23 17.61" />
+                    <path fill="none" stroke="currentColor" stroke-linejoin="round"
+                        d="m24.44 17.44l12.47 7.2v12.93c0 7.16-13.2 12.36-17.86 4.28" />
+                    <path fill="none" stroke="currentColor" stroke-linejoin="round"
+                        d="M30.5 21.2v14.14L19.31 41.8c-6.2 3.58-17.3-5.25-12.64-13.33" />
+                    <path fill="none" stroke="currentColor" stroke-linejoin="round"
+                        d="m30.5 27.94l-12.47 7.2l-11.19-6.46c-6.21-3.59-4.11-17.61 5.22-17.61" />
+                    <path fill="none" stroke="currentColor" stroke-linejoin="round"
+                        d="m24.44 31.44l-12.47-7.2V11.31c0-7.16 13.2-12.36 17.86-4.28" />
+                </svg>
+            </div>
+            <div class="w-1/2">
+                <h4 class="text-xl font-medium">Total AI Requests</h4>
+                <p class="text-5xl font-bold">{{ total_ai_request }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total testcases This Month Card -->
+    <div class="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex items-center justify-between">
+            <div class="text-red-500 text-4xl w-1/2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 48 48">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                        d="M31.06 3.5c.274 3.67-2.069 6.433-4.949 8.493c-17.475 10.759-9.899 28.848.361 31.347c.625.196 4.51.762 2.763-.195c-4.198-2.01-4.988-5.428-1.63-9.46c7.614-7.292 9.206-14.77 7.42-21.819c.194 7.38-4.794 14.4-11.647 14.449c-5.36-6.111 7.927-11.393 8.669-18.383c.205-1.67-.313-2.958-.977-4.432z" />
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                        d="M22.811 14.366c-1.406 1.034-2.782 2.108-4.198 3.133c-1.747 1.64-3.416 3.26-4.627 5.34c-5.106 11.52 2.655 18.598 7.244 20.58c1.376.741 4.305 1.288 6.13 1.005c.684-.088.84-.4 1.406-.4" />
+                </svg>
+            </div>
+            <div class="w-1/2">
+                <h4 class="text-xl font-medium">Total AI Requests </h4>
+                <p class="text-gray-500 text-sm font-medium">of {% now "n/Y" %}</p>
+                <p class="text-5xl font-bold">{{ testcases_this_month }}</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="grid grid-col-1 lg:grid-cols-1 gap-4 sm:gap-6">
+    <div class="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+        <div class="w-full max-w-[1000px] h-[500px] mx-auto">
+            <canvas id="barChart"></canvas>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartLabels = {{ labels| safe }};
+    const chartData = {{ data| safe }};
+
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Test cases over time',
+                data: chartData,
+                borderWidth: 1,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Test Case Creation Over Time',
+                },
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            },
+        },
+    });
+</script>
+{% endblock %}

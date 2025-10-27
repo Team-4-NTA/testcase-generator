@@ -4,7 +4,7 @@ async function createTemplate() {
     const selected = document.querySelector('input[name="fav_language"]:checked');
 
     if (!screen_name || !selected) {
-        alert("Vui lòng nhập đầy đủ thông tin!");
+        showAlert('error', "Vui lòng nhập đầy đủ thông tin!");
         return;
     }
 
@@ -23,45 +23,46 @@ async function createTemplate() {
                 "Content-Type": "application/json",
                 "X-CSRFToken": csrfToken
             },
+            credentials: "include",
             body: JSON.stringify({ screen_name: screen_name, requirement: JSON.stringify(requirement), type: selected.value, history_id: window.historyId })
         });
         if (response.ok) {
+            await window.fetchHistoryList();
             const result = await response.json();
-
             const randomId = Date.now();
 
             // Hiển thị bảng Spec
             appendTemplate("left", result, result.screen_name, randomId, selected.value);
         } else {
             switch (response.status) {
-            case 401:
-                console.error("❌ 401 Unauthorized: API key không hợp lệ hoặc chưa cấu hình.");
-                appendMessage("left", "API key không hợp lệ hoặc chưa cấu hình.", "System", randomId);
-                break;
-            case 400:
-                console.error("❌ 400 Bad Request: Yêu cầu không hợp lệ.");
-                appendMessage("left", "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu gửi lên.", "System", randomId);
-                break;
-            case 429:
-                console.error("❌ 429 Too Many Requests: Vượt quá giới hạn sử dụng API.");
-                appendMessage("left", "Bạn đã vượt quá giới hạn sử dụng API. Vui lòng thử lại sau.", "System", randomId);
-                break;
-            case 503:
-                console.error("❌ 503 Service Unavailable: OpenAI đang gặp sự cố.");
-                appendMessage("left", "Dịch vụ OpenAI hiện đang gặp sự cố. Vui lòng thử lại sau.", "System", randomId);
-                break;
-            case 500:
-                console.error("❌ 500 Internal Server Error");
-                appendMessage("left", "Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau.", "System", randomId);
-                break;
-            default:
-                console.error(`❌ Lỗi ${response.status}: ${response.statusText}`);
-                appendMessage("left", `Lỗi ${response.status}: ${response.statusText}`, "System", randomId);
+                case 401:
+                    console.error("❌ 401 Unauthorized: API key không hợp lệ hoặc chưa cấu hình.");
+                    appendMessage("left", "API key không hợp lệ hoặc chưa cấu hình.", "System", randomId);
+                    break;
+                case 400:
+                    console.error("❌ 400 Bad Request: Yêu cầu không hợp lệ.");
+                    appendMessage("left", "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu gửi lên.", "System", randomId);
+                    break;
+                case 429:
+                    console.error("❌ 429 Too Many Requests: Vượt quá giới hạn sử dụng API.");
+                    appendMessage("left", "Bạn đã vượt quá giới hạn sử dụng API. Vui lòng thử lại sau.", "System", randomId);
+                    break;
+                case 503:
+                    console.error("❌ 503 Service Unavailable: OpenAI đang gặp sự cố.");
+                    appendMessage("left", "Dịch vụ OpenAI hiện đang gặp sự cố. Vui lòng thử lại sau.", "System", randomId);
+                    break;
+                case 500:
+                    console.error("❌ 500 Internal Server Error");
+                    appendMessage("left", "Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau.", "System", randomId);
+                    break;
+                default:
+                    console.error(`❌ Lỗi ${response.status}: ${response.statusText}`);
+                    appendMessage("left", `Lỗi ${response.status}: ${response.statusText}`, "System", randomId);
             }
         }
     } catch (error) {
         console.error("Lỗi:", error);
-        alert("Có lỗi xảy ra trong quá trình gửi dữ liệu.");
+        showAlert('error', "Có lỗi xảy ra trong quá trình gửi dữ liệu.");
     }
 }
 
@@ -103,12 +104,12 @@ async function appendTemplate(side, data, screen_name, id, type = null) {
         container.id = lastRightId;
         container.classList.add("msg-container");
         container.classList.add("space-y-[20px]");
-        const formatted = 
-            data.replace(/^"(.*)"$/, "$1") 
-            .replace(/\\n/g, "\n")     
-            .replace(/\n/g, "<br>");
+        const formatted =
+            data.replace(/^"(.*)"$/, "$1")
+                .replace(/\\n/g, "\n")
+                .replace(/\n/g, "<br>");
 
-        container.innerHTML =`
+        container.innerHTML = `
             <div class="ml-auto max-w-md p-2.5 rounded-lg bg-stone-100 relative">
                 <div class="absolute top-1 right-2 text-[11px] text-gray-400">
                     ${formatDate(new Date())}

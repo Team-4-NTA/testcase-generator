@@ -19,7 +19,7 @@ if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'mysql.connector.django',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('DATABASE_NAME'),
         'HOST': os.getenv('DATABASE_HOST'),
         'USER': os.getenv('DATABASE_USER'),
@@ -90,7 +90,7 @@ X_FRAME_OPTIONS = 'DENY'
 # Logging for production
 LOGGING['handlers']['file']['filename'] = '/var/log/django/debug.log'
 LOGGING['loggers']['django']['level'] = 'WARNING'
-LOGGING['loggers']['chatbot']['level'] = 'INFO'
+LOGGING['loggers']['chatbot']['level'] = 'WARNING'
 
 # Sentry configuration (if available)
 if os.getenv('SENTRY_DSN'):
