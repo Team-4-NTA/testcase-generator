@@ -47,7 +47,7 @@ async function login(event) {
 
     const data = await response.json();
     if (data.success) {
-        localStorage.setItem('loginSuccess', 'Đăng nhập thành công!');
+        localStorage.setItem('success', 'Đăng nhập thành công!');
         window.location.href = "/";
     } else {
         showAlert('error', data.message);

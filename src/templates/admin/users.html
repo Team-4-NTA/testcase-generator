@@ -1,35 +1,91 @@
 {% extends 'admin/base.html' %}
+{% block header %}Người dùng{% endblock %}
+{% block control %}
+<!-- Main Control -->
+<div
+    class="shrink-0 flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 gap-1.5 overflow-x-auto min-h-[49px] text-gray-600">
+    <nav class="relative flex gap-1.5 [&>div]:min-w-0 items-center justify-between flex-1">
+        <div class="relative">
+            <ul class="isolate min-w-0 flex items-center">
+                <li class="min-w-0 py-2 mr-1">
+                    <a href="#!"
+                        class="hover:ring hover:ring-gray-200 hover:bg-gray-100/50 px-2 py-1 rounded transition group relative w-full flex items-center gap-1.5 font-medium text-sm text-gray-950">
+                        <span class="truncate">Danh sách người dùng</span>
+                    </a>
+                </li>
+                <li class="min-w-0 py-2">
+                    <a href="#!"
+                        class="hover:ring hover:ring-gray-200 hover:bg-gray-100/50 px-2 py-1 rounded transition group relative w-full flex items-center gap-1.5 font-medium text-sm hover:text-gray-950">
+                        <span class="truncate">Phân quyền</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="relative">
+            <ul class="isolate min-w-0 flex items-center">
+                <li class="min-w-0 py-2">
+                    <a href="{% url 'add_user' %}"
+                        class="group relative text-white bg-gray-800 hover:bg-gray-700 rounded p-2 w-full flex items-center gap-1.5 font-medium text-sm">
+                        <span class="truncate">Thêm mới +</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+{% endblock %}
 {% block content %}
 <div>
     <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <table class="w-full text-sm text-left text-gray-500">
+        <table class="w-full text-sm text-left rtl:text-right text-gray-500">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
-                    <th class="px-4 py-2">ID</th>
-                    <th class="px-4 py-2">Username</th>
-                    <th class="px-4 py-2">Email</th>
-                    <th class="px-4 py-2">Date Joined</th>
-                    <th class="px-4 py-2">Staff</th>
-                    <th class="px-4 py-2">Action</th>
+                    <th scope="col" class="p-4">
+                        <div class="flex items-center">
+                            <input id="checkbox-all-search" type="checkbox"
+                                class="w-4 h-4 accent-gray-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-gray-500 focus:ring-2" />
+                            <label for="checkbox-all-search" class="sr-only">
+                                checkbox
+                            </label>
+                        </div>
+                    </th>
+                    <th scope="col" class="px-6 py-3">ID</th>
+                    <th scope="col" class="px-6 py-3">Username</th>
+                    <th scope="col" class="px-6 py-3">Email</th>
+                    <th scope="col" class="px-6 py-3">Date Joined</th>
+                    <th scope="col" class="px-6 py-3">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in page_obj %}
-                <tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="px-4 py-2">{{ user.id }}</td>
-                    <td class="px-4 py-2 font-medium text-gray-900">{{ user.username }}</td>
-                    <td class="px-4 py-2">{{ user.email }}</td>
-                    <td class="px-4 py-2">{{ user.date_joined|date:"Y-m-d H:i" }}</td>
-                    <td class="px-4 py-2">
-                        {% if user.is_staff %}
-                        <span class="text-green-600 font-semibold">Yes</span>
-                        {% else %}
-                        <span class="text-gray-400">No</span>
-                        {% endif %}
+                <tr class="bg-white border-b border-gray-200 hover:bg-gray-50">
+                    <td class="w-4 p-4">
+                        <div class="flex items-center">
+                            <input id="checkbox-table-search-1" type="checkbox"
+                                class="w-4 h-4 accent-gray-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-gray-500 focus:ring-2" />
+                            <label for="checkbox-table-search-1" class="sr-only">
+                                checkbox
+                            </label>
+                        </div>
                     </td>
-                    <td class="px-4 py-2">
-                        <a href="{% url 'admin:auth_user_change' user.id %}"
-                            class="text-gray-600 hover:underline">Edit</a>
+                    <td class="px-6 py-4">{{ user.id }}</td>
+                    <td class="px-6 py-4">{{ user.username }}</td>
+                    <td class="px-6 py-4">{{ user.email }}</td>
+                    <td class="px-6 py-4">{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                    <td class="flex items-center px-6 py-4">
+                        <a href="{% url 'edit_user' user.id %}" class="font-medium text-gray-600 hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="currentColor"
+                                    d="M3 21V3h10.925l-2 2H5v14h14v-6.95l2-2V21zm6-6v-4.25L19.625.125L23.8 4.4L13.25 15zM21.025 4.4l-1.4-1.4zM11 13h1.4l5.8-5.8l-.7-.7l-.725-.7L11 11.575zm6.5-6.5l-.725-.7zl.7.7z" />
+                            </svg>
+                        </a>
+                        <a href="" onclick="deleteUser(event, {{ user.id }})"
+                            class="font-medium text-red-600 hover:underline ms-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                <path fill="currentColor"
+                                    d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z" />
+                            </svg>
+                        </a>
                     </td>
                 </tr>
                 {% empty %}
@@ -41,112 +97,99 @@
         </table>
     </div>
 
-    <div class="flex justify-center mt-5 gap-2">
-        {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}"
-            class="pagination-link px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">‹ Prev</a>
-        {% endif %}
-        <span class="px-3 py-2 bg-gray-100 rounded">Trang {{ page_obj.number }} / {{ page_obj.num_pages
-            }}</span>
-        {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}"
-            class="pagination-link px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">Next ›</a>
-        {% endif %}
-    </div>
-
     <!-- Pagination -->
     <div class="flex justify-center pt-5">
         <nav>
             <ul class="flex flex-wrap items-center justify-center gap-1.5 font-semibold text-gray-700">
+
+                {# Nút về đầu tiên #}
+                {% if page_obj.has_previous %}
                 <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                    <a href="?page=1"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition"
+                        title="Trang đầu">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
                             <path fill="currentColor"
                                 d="M18.41 7.41L17 6l-6 6l6 6l1.41-1.41L13.83 12zm-6 0L11 6l-6 6l6 6l1.41-1.41L7.83 12z" />
                         </svg>
                     </a>
                 </li>
+                {% endif %}
 
+                {# Nút trước đó #}
+                {% if page_obj.has_previous %}
                 <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                    <a href="?page={{ page_obj.previous_page_number }}"
+                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition"
+                        title="Trang trước">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
                             <path fill="currentColor" d="m14 18l-6-6l6-6l1.4 1.4l-4.6 4.6l4.6 4.6z" />
                         </svg>
                     </a>
                 </li>
+                {% endif %}
 
-                <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <span>1</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <span>...</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <span>4</span>
-                    </a>
-                </li>
-
+                {# Hiển thị số trang (với dấu … khi cần) #}
+                {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
                 <li>
                     <button
                         class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-gray-800 text-white transition">
-                        <span>5</span>
+                        {{ num }}
                     </button>
                 </li>
-
-                <li>
-                    <a href="#!"
+                {% elif num >= page_obj.number|add:-2 and num <= page_obj.number|add:2 %} <li>
+                    <a href="?page={{ num }}"
                         class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <span>6</span>
+                        {{ num }}
                     </a>
-                </li>
+                    </li>
+                    {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                    <li>
+                        <a href="?page={{ num }}"
+                            class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% elif num == page_obj.number|add:-3 or num == page_obj.number|add:3 %}
+                    <li>
+                        <span class="flex items-center justify-center w-8 h-8 text-gray-400 select-none">
+                            …
+                        </span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
 
-                <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <span>...</span>
-                    </a>
-                </li>
+                    {# Nút kế tiếp #}
+                    {% if page_obj.has_next %}
+                    <li>
+                        <a href="?page={{ page_obj.next_page_number }}"
+                            class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition"
+                            title="Trang sau">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M12.6 12L8 7.4L9.4 6l6 6l-6 6L8 16.6z" />
+                            </svg>
+                        </a>
+                    </li>
+                    {% endif %}
 
-                <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <span>10</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M12.6 12L8 7.4L9.4 6l6 6l-6 6L8 16.6z" />
-                        </svg>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="#!"
-                        class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-                            <path fill="currentColor"
-                                d="M5.59 7.41L7 6l6 6l-6 6l-1.41-1.41L10.17 12zm6 0L13 6l6 6l-6 6l-1.41-1.41L16.17 12z" />
-                        </svg>
-                    </a>
-                </li>
+                    {# Nút cuối cùng #}
+                    {% if page_obj.has_next %}
+                    <li>
+                        <a href="?page={{ page_obj.paginator.num_pages }}"
+                            class="flex items-center justify-center w-8 h-8 rounded-md shadow-sm ring ring-gray-200 bg-white hover:bg-gray-800 hover:text-white transition"
+                            title="Trang cuối">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="currentColor"
+                                    d="M5.59 7.41L7 6l6 6l-6 6l-1.41-1.41L10.17 12zm6 0L13 6l6 6l-6 6l-1.41-1.41L16.17 12z" />
+                            </svg>
+                        </a>
+                    </li>
+                    {% endif %}
             </ul>
         </nav>
     </div>
+
 </div>
 
 <div class="border-t border-8 border-gray-200"></div>
@@ -164,4 +207,5 @@
         }
     });
 </script>
+
 {% endblock %}
