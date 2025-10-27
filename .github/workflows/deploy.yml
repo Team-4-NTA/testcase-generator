@@ -344,6 +344,7 @@ jobs:
             \"export HOME=/home/ec2-user\",
             \"cd /home/ec2-user/testcase-generator\",
             \"docker-compose ps\",
+            \"docker-compose exec -T web python manage.py makemigrations || echo MAKEMIGRATIONS_FAILED:$?\",
             \"docker-compose exec -T web python manage.py migrate --noinput || echo MIGRATE_FAILED:$?\",
             \"docker-compose exec -T web python manage.py create_user || echo CREATE_USER_FAILED:$?\"
           ]" \
