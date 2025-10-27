@@ -332,18 +332,19 @@ jobs:
           exit 1
         fi
 
-    - name: Deploy to EC2 - Step 6 - Run migrations
-      id: ssm-run-migrations
+    - name: Deploy to EC2 - Step 6 - Run migrations & create default users
+      id: ssm-run-migrations-and-create-users
       run: |
-        echo "Running Django migrations..."
+        echo "Running Django migrations and creating default users..."
         COMMAND_ID=$(aws ssm send-command --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
           --document-name "AWS-RunShellScript" \
-          --comment "Run migrations" \
+          --comment "Run migrations and create users" \
           --parameters "commands=[
             \"set -e\",
             \"export HOME=/home/ec2-user\",
             \"cd /home/ec2-user/testcase-generator\",
-            \"docker-compose exec web python manage.py migrate --noinput\"
+            \"docker-compose exec web python manage.py migrate --noinput\",
+            \"docker-compose exec web python manage.py create_user\"
           ]" \
           --output text \
           --query 'Command.CommandId' \
@@ -379,7 +380,7 @@ jobs:
         echo "Error: $ERROR"
 
         if [ "$STATUS" != "Success" ]; then
-          echo "Migration failed with status: $STATUS"
+          echo "Migration or user creation failed with status: $STATUS"
           exit 1
         fi
 
