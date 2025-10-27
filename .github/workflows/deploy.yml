@@ -343,14 +343,9 @@ jobs:
             \"set -e\",
             \"export HOME=/home/ec2-user\",
             \"cd /home/ec2-user/testcase-generator\",
-            \"echo 'Checking Docker containers...' \",
             \"docker-compose ps\",
-            \"echo 'Waiting for web container to be ready...' \",
-            \"for i in {1..10}; do docker-compose exec web sh -c 'echo > /dev/tcp/db/3306' && break || (echo '⏳ DB not ready, retrying...'; sleep 5); done\",
-            \"echo 'Running migrations...' \",
-            \"docker-compose exec web python manage.py migrate --noinput || (echo 'Migration failed' && exit 1)\",
-            \"echo 'Creating default users...' \",
-            \"docker-compose exec web python manage.py create_user || (echo 'Create user failed' && exit 1)\"
+            \"docker-compose exec -T web python manage.py migrate --noinput || echo MIGRATE_FAILED:$?\",
+            \"docker-compose exec -T web python manage.py create_user || echo CREATE_USER_FAILED:$?\"
           ]" \
           --output text \
           --query 'Command.CommandId' \
