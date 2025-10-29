@@ -13,7 +13,6 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.sites.shortcuts import get_current_site
 
 @csrf_protect
 def login_view(request):
@@ -178,10 +177,9 @@ def register(request):
         )
 
         # Tạo token và link xác nhận
-        current_site = get_current_site(request)
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        confirm_link = f"http://{current_site.domain}/activate/{uid}/{token}/"
+        confirm_link = request.build_absolute_uri(f'/activate/{uid}/{token}/')
 
         # Render email từ template
         subject = "Xác nhận tài khoản của bạn"
