@@ -4,7 +4,6 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.http import JsonResponse
-from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
@@ -56,10 +55,9 @@ def resend_confirm_email(request):
             return JsonResponse({"success": False, "message": "Tài khoản đã được kích hoạt."})
 
         # 🔹 Tạo token + link xác nhận
-        current_site = get_current_site(request)
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        confirm_link = f"http://{current_site.domain}/activate/{uid}/{token}/"
+        confirm_link = request.build_absolute_uri(f'/activate/{uid}/{token}/')
 
         # 🔹 Render email
         subject = "Xác nhận tài khoản của bạn"
